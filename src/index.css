@@ -1,3 +1,8 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* (선택사항) 전역 커스텀 스타일 */
+body {
+  @apply bg-white text-gray-800;
+}
