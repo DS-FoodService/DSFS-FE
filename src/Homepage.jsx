@@ -2,19 +2,19 @@ import React, { useRef } from 'react';
 import RestaurantCard from './RestaurantCard.jsx'; // 식당 카드 컴포넌트 import
 
 export const HomePage = ({ setPage }) => {
-  const onCampusRef = useRef(null); // [수정] 사용자 코드: 변수명 변경
-  const offCampusRef = useRef(null); // [수정] 사용자 코드: 변수명 변경
+  const onCampusRef = useRef(null); // 변수명 변경
+  const offCampusRef = useRef(null); // 변수명 변경
 
-  const scrollToRef = (ref) => { // [수정] 사용자 코드: 함수명 변경
+  const scrollToRef = (ref) => { // 함수명 변경
     ref.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // --- 임시 데이터 ---
-  // [수정] 사용자 코드: props 이름 원본 디자인 기준으로 통일 (imageUrl, reviewCount, icon)
+  // props 이름 원본 디자인 기준으로 통일 (imageUrl, reviewCount, icon)
   const onCampusRestaurants = [
     { id: 'resto_1', name: '오늘의 메뉴', rating: 4.5, reviewCount: 100, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/F0E7D8/333?text=Food+1' },
     { id: 'resto_2', name: '비바쿡', rating: 4.2, reviewCount: 80, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/D8F0E7/333?text=Food+2' },
-    { id: 'resto_3', name: '포한끼', rating: 4.0, reviewCount: 50, icon: '어양O L', imageUrl: 'https://placehold.co/184x184/E7D8F0/333?text=Food+3' },
+    { id: 'resto_3', name: '포한끼', rating: 4.0, reviewCount: 50, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/E7D8F0/333?text=Food+3' },
   ];
   const offCampusRestaurants = [
     { id: 'resto_4', name: '양국', rating: 4.8, reviewCount: 100, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/F0D8D8/333?text=Food+4' },
@@ -25,7 +25,7 @@ export const HomePage = ({ setPage }) => {
   // --- 임시 데이터 끝 ---
 
   return (
-    // [수정] 사용자 코드: 배경색 변경
+    // 배경색 변경
     <div className="bg-lime-50/30"> 
 
       {/* --- 1. '오늘 뭐 먹지?' 섹션 (좌/우 정렬 버전) --- */}
@@ -103,9 +103,6 @@ export const HomePage = ({ setPage }) => {
   </div>
 </div>
 
-<div className="bg-lime-300 text-lime-900 p-4 rounded-lg">
-  색상 테스트 박스
-</div>
 
       {/* --- 3. '학식당' 섹션 --- */}
 <div ref={onCampusRef} className="py-16 bg-lime-50/30"> 
@@ -137,7 +134,7 @@ export const HomePage = ({ setPage }) => {
     <div className="flex justify-between items-center mb-8">
       <h2 className="text-3xl font-bold text-gray-800">학교 밖 식당</h2>
       <button
-        onClick={() => setPage('menu')}
+        onClick={() => setPage('offcampus')}
         className="px-6 py-2 bg-gradient-to-r from-lime-200 to-lime-400 text-lime-900 font-semibold rounded-full shadow-md 
                    hover:from-lime-300 hover:to-lime-500 hover:-translate-y-0.5 hover:shadow-lg 
                    transition-all duration-300 ease-in-out"

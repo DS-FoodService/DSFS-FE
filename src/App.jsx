@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 // 1. AuthContext 파일 경로 (
 import { AuthContext } from './AuthContext.jsx'; 
 
@@ -9,12 +9,14 @@ import { Header, Footer } from './Layout.jsx';
 import HomePage from './Homepage.jsx';
 import LoginPage from './login.jsx';
 import SignUpPage from './Signin.jsx';
+import MenuPage from './MenuPage.jsx';
+import OffCampusPage from './OffCampusPage.jsx';
+
+//import { KAKAO_APP_KEY } from './AuthContext.jsx';
+const FAKE_API_URL = '/api'; 
+const KAKAO_APP_KEY = '8668be1b8e7bcc2a3ba8e26af8f107c6';
 
 // --- export default function App() { ... } ---
-
-<div className="bg-lime-300 text-lime-900 p-4 rounded-lg text-center font-bold mb-6">
-  Tailwind 작동 확인 중 🍃
-</div>
 
 export default function App() {
   const [page, setPage] = useState('home'); 
@@ -23,6 +25,29 @@ export default function App() {
   const [favorites, setFavorites] = useState([]); 
   const [isAuthReady, setIsAuthReady] = useState(false); 
 
+// --- 0. 카카오지도
+  useEffect(() => {
+    if (!document.getElementById('kakao-maps-script')) {
+      const script = document.createElement('script');
+      script.id = 'kakao-maps-script';
+      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services,clusterer,drawing&autoload=false`;
+      script.async = true;
+      
+      script.onload = () => {
+        if (window.kakao && window.kakao.maps) {
+          window.kakao.maps.load(() => {
+            console.log('Kakao Maps API loaded.');
+          });
+        }
+      };
+      
+      script.onerror = () => {
+        console.error("Failed to load Kakao Maps API. Check your API key.");
+      };
+      
+      document.head.appendChild(script);
+    }
+  }, []);
 
   // --- 1. 인증 관련 로직 (사용자 코드와 동일) ---
   useEffect(() => {
@@ -88,11 +113,15 @@ export default function App() {
   const renderPage = () => {
     switch (page) {
       case 'login': return <LoginPage setPage={setPage} />;
-      // [수정] 사용자 코드: case 'signup' 추가
+      // 회원가입
       case 'signup': return <SignUpPage setPage={setPage} />; 
-      // [수정] 사용자 코드: default에서 HomePage를 반환하도록 변경
+      // default에서 HomePage를 반환하도록 변경
       case 'home': 
       default: return <HomePage setPage={setPage} />; 
+      case 'menu':  // 메뉴페이지
+      return <MenuPage setPage={setPage} />;
+      case 'offcampus':
+      return <OffCampusPage setPage={setPage} />; 
     }
   };
 
@@ -109,11 +138,12 @@ export default function App() {
   }
 
   // --- 3. 최종 JSX 렌더링 (사용자 코드와 동일) ---
-  return (
+ return (
     <AuthContext.Provider value={authContextValue}>
       <div className="font-sans antialiased text-gray-800">
         {page !== 'login' && page !== 'signup' && <Header setPage={setPage} />}
-        <main>{renderPage()}</main>
+        {/* [수정] z-index 수정 */}
+        <main className="relative z-10">{renderPage()}</main> 
         {page !== 'login' && page !== 'signup' && <Footer setPage={setPage} />}
       </div>
     </AuthContext.Provider>
