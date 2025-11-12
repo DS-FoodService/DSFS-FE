@@ -5,73 +5,68 @@ export const Header = ({ setPage }) => {
   const { user, isLoggedIn, logout } = useAuth();
 
   const handleProfileClick = () => {
-    if (isLoggedIn) {
-      console.log("사용자 페이지로 이동 (구현 필요)");
-    } else {
-      setPage('signup');
-    }
-  };
-
-  const handleSearchClick = () => {
-    console.log("검색 클릭 (구현 필요)");
+    if (isLoggedIn) setPage("mypage"); // (나중에 구현 예정)
+    else setPage("signup");
   };
 
   return (
     <header className="bg-lime-50/30 shadow-sm sticky top-0 z-50 backdrop-blur-md">
       <nav className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div
-            onClick={() => setPage('home')}
-            className="text-2xl font-bold text-lime-800 cursor-pointer"
-          >
-            밥상나침반
+
+          {/* ✅ 로고 부분 수정 */}
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setPage('home')}>
+            <img
+              src="/assets/restaurants/밥상로고.png"
+              alt="밥상나침반 로고"
+              className="w-14 h-14 object-contain"
+            />
+            <span className="text-2xl font-bold text-lime-800">Babsang</span>
           </div>
+
+          {/* 메뉴 */}
           <div className="flex space-x-8">
             <button onClick={() => setPage('home')} className="font-semibold text-gray-600 hover:text-lime-700">Home</button>
-            
+
             <div className="relative group">
               <button className="font-semibold text-gray-600 hover:text-lime-700 flex items-center">
                 Menu
                 <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
               <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white rounded-lg shadow-xl overflow-hidden hidden group-hover:block z-50">
-                <button 
-                  onClick={() => setPage('menu')} 
-                  className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-lime-100"
-                >
+                <button onClick={() => setPage('menu')} className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-lime-100">
                   학식당
                 </button>
-                <button 
-                  onClick={() => setPage('offcampus')} 
-                  className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-lime-100"
-                >
+                <button onClick={() => setPage('offcampus')} className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-lime-100">
                   학교 밖 식당
                 </button>
               </div>
             </div>
 
-            <button onClick={() => setPage('offers')} className="font-semibold text-gray-600 hover:text-lime-700">Offers</button>
-            <button onClick={() => setPage('service')} className="font-semibold text-gray-600 hover:text-lime-700">Service</button>
             <button onClick={() => setPage('about')} className="font-semibold text-gray-600 hover:text-lime-700">About Us</button>
           </div>
+
+          {/* 프로필 / 로그아웃 */}
           <div className="flex items-center space-x-4">
-            <button onClick={handleSearchClick} className="text-gray-600 hover:text-lime-700" aria-label="검색">
+            <button onClick={() => console.log("검색")} className="text-gray-600 hover:text-lime-700">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
             </button>
-            <button onClick={handleProfileClick} className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border-2 border-gray-400 hover:border-lime-500" aria-label="프로필">
+
+            <button onClick={handleProfileClick} className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border-2 border-gray-400 hover:border-lime-500">
               <img
                 src={isLoggedIn ? `https://placehold.co/40x40/A9C388/FFFFFF?text=${user?.username?.[0] || 'U'}` : 'https://placehold.co/40x40/E0E0E0/333?text=?'}
                 alt="Profile"
                 className="w-full h-full object-cover"
-                onError={(e) => e.target.src = 'https://placehold.co/40x40/E0E0E0/333?text=?'}
               />
             </button>
+
             {isLoggedIn && (
               <button onClick={logout} className="hidden md:block text-sm font-semibold text-gray-600 hover:text-lime-700">
                 로그아웃
               </button>
             )}
           </div>
+
         </div>
       </nav>
     </header>

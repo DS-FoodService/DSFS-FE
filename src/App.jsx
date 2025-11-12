@@ -1,4 +1,11 @@
 import { useState, useEffect } from 'react';
+
+import api from './api/client';
+import {
+  AUTH_LOGIN, AUTH_SIGNUP, AUTH_ME,
+  FAV_LIST, FAV_TOGGLE,
+} from './api/endpoints';
+
 // 1. AuthContext 파일 경로 (
 import { AuthContext } from './AuthContext.jsx'; 
 
@@ -30,7 +37,7 @@ export default function App() {
     if (!document.getElementById('kakao-maps-script')) {
       const script = document.createElement('script');
       script.id = 'kakao-maps-script';
-      script.src = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services,clusterer,drawing&autoload=false`;
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&libraries=services,clusterer,drawing&autoload=false`;
       script.async = true;
       
       script.onload = () => {
@@ -49,65 +56,94 @@ export default function App() {
     }
   }, []);
 
-  // --- 1. 인증 관련 로직 (사용자 코드와 동일) ---
+  // --- 1. 인증 관련 로직
   useEffect(() => {
-    const fetchUserWithToken = async () => {
-      if (token) {
-        try {
-          const userRes = await fetch(`${FAKE_API_URL}/me`, { headers: { 'Authorization': `Bearer ${token}` }});
-          if (!userRes.ok) throw new Error('Invalid token');
-          const userData = await userRes.json();
-          const favRes = await fetch(`${FAKE_API_URL}/favorites`, { headers: { 'Authorization': `Bearer ${token}` }});
-          if (!favRes.ok) throw new Error('Could not fetch favorites');
-          const favData = await favRes.json();
-          setUser(userData);
-          setFavorites(favData.favorites || []);
-        } catch (error) {
-          console.error("Token login failed:", error);
-          localStorage.removeItem('token');
-          setToken(null);
-          setUser(null);
-          setFavorites([]);
-        }
+  const fetchUserWithToken = async () => {
+    if (token) {
+      try {
+        const { data: userData } = await api.get(AUTH_ME);
+        const { data: favData }  = await api.get(FAV_LIST);
+        setUser(userData);
+        setFavorites(favData?.favorites || []);
+      } catch (error) {
+        console.error("Token login failed:", error);
+        localStorage.removeItem('token');
+        setToken(null);
+        setUser(null);
+        setFavorites([]);
       }
-      setIsAuthReady(true); 
-    };
-    fetchUserWithToken();
-  }, [token]); 
-
-  const login = async (email, password) => {
-    const res = await fetch(`${FAKE_API_URL}/login`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password }) });
-    if (!res.ok) { const err = await res.json(); throw new Error(err.message || '로그인 실패'); }
-    const data = await res.json();
-    localStorage.setItem('token', data.token);
-    setToken(data.token); 
+    }
+    setIsAuthReady(true);
   };
+  fetchUserWithToken();
+}, [token]);
 
-  const signup = async (username, email, password) => {
-    const res = await fetch(`${FAKE_API_URL}/signup`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, email, password }) });
-    if (!res.ok) { const err = await res.json(); throw new Error(err.message || '회원가입 실패'); }
-    const data = await res.json();
-    localStorage.setItem('token', data.token);
-    setToken(data.token);
-  };
+// 로그인 
+const login = async (email, password) => {
+  try {
+    const { data } = await api.post(AUTH_LOGIN, { email, password });
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setUser(null);
-    setFavorites([]);
-    setPage('home'); 
-  };
+    const tokenFromServer = data?.token || data?.accessToken;
+    if (!tokenFromServer) throw new Error("토큰이 응답에 없습니다.");
 
-  const toggleFavorite = async (restaurantId, isCurrentlyFavorite) => {
-    if (!token) return; 
-    try {
-      const res = await fetch(`${FAKE_API_URL}/favorites/toggle`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }, body: JSON.stringify({ restaurantId }) });
-      if (!res.ok) throw new Error('Favorite toggle failed');
-      if (isCurrentlyFavorite) { setFavorites(prev => prev.filter(id => id !== restaurantId)); } 
-      else { setFavorites(prev => [...prev, restaurantId]); }
-    } catch (error) { console.error(error); }
-  };
+    localStorage.setItem("token", tokenFromServer);
+    setToken(tokenFromServer);
+
+    // 로그인 성공 → 홈 이동
+    setPage("home");
+
+  } catch (err) {
+    console.error("로그인 오류:", err);
+
+    if (err.response?.status === 401) {
+      if (confirm("존재하지 않는 계정입니다.\n회원가입 페이지로 이동할까요?")) {
+        setPage("signup");
+      }
+      return;
+    }
+
+    alert("로그인 중 오류가 발생했습니다.");
+  }
+};
+
+
+// 회원가입 
+const signup = async (username, email, password) => {
+  try {
+    const { data } = await api.post(AUTH_SIGNUP, { username, email, password });
+
+    const tokenFromServer = data?.token || data?.accessToken;
+    if (!tokenFromServer) throw new Error("토큰이 응답에 없습니다.");
+
+    localStorage.setItem("token", tokenFromServer);
+    setToken(tokenFromServer);
+
+    alert("회원가입이 완료되었습니다.");
+
+    // 회원가입 성공 → 자동 로그인 효과 → 홈 이동
+    setPage("home");
+
+  } catch (err) {
+    console.error("회원가입 오류:", err);
+
+    alert(err.response?.data?.message || "회원가입 중 오류가 발생했습니다.");
+  }
+};
+
+
+
+const toggleFavorite = async (restaurantId, isCurrentlyFavorite) => {
+  if (!token) return alert('로그인 후 이용해주세요.');
+
+  await api.post(FAV_TOGGLE, { restaurantId });
+
+  if (isCurrentlyFavorite) {
+    setFavorites(prev => prev.filter(id => id !== restaurantId));
+  } else {
+    setFavorites(prev => [...prev, restaurantId]);
+  }
+};
+
 
   // --- 2. 페이지 렌더링 로직 (사용자 코드와 동일) ---
   const renderPage = () => {
@@ -124,6 +160,14 @@ export default function App() {
       return <OffCampusPage setPage={setPage} />; 
     }
   };
+
+ const logout = () => {
+  localStorage.removeItem('token');
+  setToken(null);
+  setUser(null);
+  setFavorites([]);
+  setPage('home');
+};
 
   // AuthContext에 제공할 값 (사용자 코드와 동일)
   const authContextValue = {
