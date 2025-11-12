@@ -152,7 +152,7 @@ export const MenuPage = ({ setPage }) => {
                 ${activeFilters.includes(f.id) ? "scale-110" : "opacity-70 hover:opacity-100"}
               `}
             >
-              <img src={f.icon} alt={f.name} className="w-14 h-14 object-contain" />
+              <img src={f.icon} alt={f.name} className="w-17 h-17 object-contain" />
             </button>
           ))}
         </div>

@@ -6,8 +6,7 @@ import {
   FAV_LIST, FAV_TOGGLE,
 } from './api/endpoints';
 
-// 1. AuthContext 파일 경로 (
-import { AuthContext } from './AuthContext.jsx'; 
+import { AuthContext } from "./AuthContext.jsx";
 
 // 2. 레이아웃 파일 경로 
 import { Header, Footer } from './Layout.jsx';
@@ -83,64 +82,58 @@ const login = async (email, password) => {
   try {
     const { data } = await api.post(AUTH_LOGIN, { email, password });
 
-    const tokenFromServer = data?.token || data?.accessToken;
+    console.log("로그인 응답:", data); // ✅ 확인용 콘솔
+
+    const tokenFromServer = data.result?.accessToken;
     if (!tokenFromServer) throw new Error("토큰이 응답에 없습니다.");
 
     localStorage.setItem("token", tokenFromServer);
     setToken(tokenFromServer);
 
-    // 로그인 성공 → 홈 이동
+    alert("로그인 성공!");
     setPage("home");
 
   } catch (err) {
     console.error("로그인 오류:", err);
-
-    if (err.response?.status === 401) {
-      if (confirm("존재하지 않는 계정입니다.\n회원가입 페이지로 이동할까요?")) {
-        setPage("signup");
-      }
-      return;
-    }
-
-    alert("로그인 중 오류가 발생했습니다.");
+    alert(err.response?.data?.message || "로그인 중 오류가 발생했습니다.");
   }
 };
 
 
 // 회원가입 
-const signup = async (username, email, password) => {
+const signup = async (email, password) => {
   try {
-    const { data } = await api.post(AUTH_SIGNUP, { username, email, password });
+    const { data } = await api.post(AUTH_SIGNUP, { email, password });
 
-    const tokenFromServer = data?.token || data?.accessToken;
+    const tokenFromServer = data.result?.accessToken;
     if (!tokenFromServer) throw new Error("토큰이 응답에 없습니다.");
 
     localStorage.setItem("token", tokenFromServer);
     setToken(tokenFromServer);
 
     alert("회원가입이 완료되었습니다.");
-
-    // 회원가입 성공 → 자동 로그인 효과 → 홈 이동
     setPage("home");
 
   } catch (err) {
     console.error("회원가입 오류:", err);
-
     alert(err.response?.data?.message || "회원가입 중 오류가 발생했습니다.");
   }
 };
 
 
+const toggleFavorite = async (restaurantId) => {
+  try {
+    const { data } = await api.post(FAV_TOGGLE, { restaurantId });
 
-const toggleFavorite = async (restaurantId, isCurrentlyFavorite) => {
-  if (!token) return alert('로그인 후 이용해주세요.');
+    // 백엔드 응답 형식에 따라 반영
+    setFavorites((prev) =>
+      prev.includes(restaurantId)
+        ? prev.filter((id) => id !== restaurantId)
+        : [...prev, restaurantId]
+    );
 
-  await api.post(FAV_TOGGLE, { restaurantId });
-
-  if (isCurrentlyFavorite) {
-    setFavorites(prev => prev.filter(id => id !== restaurantId));
-  } else {
-    setFavorites(prev => [...prev, restaurantId]);
+  } catch (err) {
+    alert("로그인 후 이용해주세요.");
   }
 };
 

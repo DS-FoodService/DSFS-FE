@@ -14,7 +14,7 @@ export const Header = ({ setPage }) => {
       <nav className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
 
-          {/* ✅ 로고 부분 수정 */}
+          {/* 로고 부분 수정 */}
           <div className="flex items-center space-x-2 cursor-pointer" onClick={() => setPage('home')}>
             <img
               src="/assets/restaurants/밥상로고.png"
@@ -79,7 +79,7 @@ export const Footer = ({ setPage }) => {
     <footer className="bg-gray-800 text-gray-300 py-12"> {/* [수정] 사용자 코드: py-12로 패딩 통일 */}
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row justify-between gap-10">
         
-        {/* 1. 밥상나침반 */}
+        {/* 1. 밥상 */}
         {/* [수정] 사용자 코드: flex, items-center/lg:items-start, lg:w-1/4 추가 */}
         <div className="space-y-4 flex flex-col items-center lg:items-start lg:w-1/4"> 
           <h3 className="text-2xl font-bold text-white">밥상나침반</h3>

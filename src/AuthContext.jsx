@@ -1,28 +1,87 @@
-/* import { createContext, useContext } from 'react';
+// AuthContext.jsx
+import { createContext, useContext, useState } from "react";
+import axios from "axios";
+import { API_BASE_URL } from "./config.js";   // config.js 의 BASE URL 사용
 
-// App.jsx가 Provider를 사용할 수 있도록 export
 export const AuthContext = createContext(null);
 
-// 다른 컴포넌트(Layout, Login 등)가 훅을 사용할 수 있도록 export
-export const useAuth = () => {
-    return useContext(AuthContext);
-}; */
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [favorites, setFavorites] = useState([]);
 
-// import React, { createContext, useContext, useState, useEffect } from 'react';
-import { createContext, useContext } from 'react';
-// API URL (백엔드 친구와 맞춘 URL로 수정하세요)
-export const FAKE_API_URL = '/api';
-// [추가] 카카오맵 API 키 (반드시 본인의 키로 교체해야 합니다!)
-export const KAKAO_APP_KEY = 'YOUR_KAKAO_APP_KEY'; // <--- !!! 중요: 이 부분을 본인 키로 바꾸세요 !!!
+  /* 로그인 */
+  const login = async (email, password) => {
+    try {
+      const res = await axios.post(`${API_BASE_URL}/auth/login`, {
+        email,
+        password,
+      });
 
-// --- [AuthContext.jsx] 시작 ---
-// [수정] App 컴포넌트가 사용해야 하므로, 이 파일의 최상단에 정의되어야 합니다.
-export const AuthContext = createContext();
+      const token = res.data?.accessToken || res.data?.token;
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+      if (!token) throw new Error("토큰이 응답에 없습니다.");
+
+      localStorage.setItem("token", token);
+      setUser(res.data.user);
+
+    } catch (err) {
+      alert("로그인 실패. 이메일/비밀번호를 확인하세요.");
+      throw err;
+    }
+  };
+
+
+  /* 회원가입 (Swagger 기준: email + password 만 전달) */
+  const signup = async (email, password) => {
+    try {
+      await axios.post(`${API_BASE_URL}/auth/register`, {
+        email,
+        password,
+      });
+
+      alert("회원가입 완료! 로그인 해주세요.");
+
+      setPage("login");
+
+    } catch (err) {
+      alert(err.response?.data?.message || "회원가입 중 오류 발생");
+      throw err;
+    }
+  };
+
+
+  /* 북마크 (찜) 토글 */
+  const toggleFavorite = async (restoId) => {
+    const token = localStorage.getItem("token");
+    if (!token) return alert("로그인이 필요한 기능입니다.");
+
+    await axios.post(
+      `${API_BASE_URL}/bookmark/${restoId}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setFavorites((prev) =>
+      prev.includes(restoId)
+        ? prev.filter((id) => id !== restoId)
+        : [...prev, restoId]
+    );
+  };
+
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        signup,
+        favorites,
+        toggleFavorite,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };
+
+export const useAuth = () => useContext(AuthContext);

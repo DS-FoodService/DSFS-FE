@@ -1,28 +1,29 @@
 import { useEffect, useState } from 'react';
-import { fetchReviews } from './api/reviews';
+import api from "./api/client";
+import { REVIEWS_LIST } from "./api/endpoints";
 
 export default function ReviewList({ restaurantId }) {
-  const [items, setItems] = useState([]);
+  const [items, setReviews] = useState([]);
 
-  useEffect(() => {
-    let mounted = true;
-    fetchReviews(restaurantId)
-      .then((list) => mounted && setItems(list))
-      .catch(console.error);
-    return () => { mounted = false; };
+   useEffect(() => {
+    const loadReviews = async () => {
+      const res = await api.get(`${REVIEWS_LIST}/${restaurantId}`);
+
+      // ✅ swagger 대응 (res.data.result.reviews)
+      setReviews(res.data.result.reviews);
+    };
+    loadReviews();
   }, [restaurantId]);
 
-  if (!items.length) return <p className="text-gray-500">아직 리뷰가 없어요.</p>;
-
   return (
-    <ul className="space-y-3">
-      {items.map((rv) => (
-        <li key={rv.id} className="p-3 border rounded">
-          <div className="text-yellow-500 font-semibold">★ {rv.rating}</div>
-          <div className="text-sm">{rv.content}</div>
-          <div className="text-xs text-gray-400">{rv.createdAt}</div>
-        </li>
+    <div className="space-y-3">
+      {reviews.map((r) => (
+        <div key={r.reviewId} className="p-3 border rounded-md bg-gray-50">
+          <p className="font-semibold">{r.author}</p>
+          <p>{r.content}</p>
+          <span className="text-sm text-gray-500">{r.createdAt}</span>
+        </div>
       ))}
-    </ul>
+    </div>
   );
 }

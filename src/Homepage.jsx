@@ -10,7 +10,7 @@ export const HomePage = ({ setPage }) => {
     ref.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // ✅ mainfood 이미지 가져오기
+  // mainfood 이미지 가져오기
   const mainFoodImage = images.find(i => i.name === "mainfood")?.src;
 
   // 임시 데이터
