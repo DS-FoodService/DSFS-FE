@@ -78,11 +78,12 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider
       value={{
-        user,
         login,
         signup,
         favorites,
         toggleFavorite,
+        setPage,
+        showLoginModal: () => setPage("login"),
       }}
     >
       {children}

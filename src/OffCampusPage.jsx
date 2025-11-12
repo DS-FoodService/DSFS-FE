@@ -142,7 +142,7 @@ const OffCampusPage = ({ setPage }) => {
               }
               className={`${activeFilters.includes(f.id) ? "scale-110" : "opacity-75 hover:opacity-100"} transition`}
             >
-              <img src={f.icon} className="w-14 h-14" />
+              <img src={f.icon} className="w-19 h-8" />
             </button>
           ))}
         </div>

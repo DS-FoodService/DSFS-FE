@@ -1,14 +1,14 @@
 // AUTH
 export const AUTH_SIGNUP = "/auth/signup";
 export const AUTH_LOGIN = "/auth/login";
-export const AUTH_ME = "/auth/me";
 
 // BOOKMARK (찜)
-export const FAV_TOGGLE = "/bookmark/toggle";
-export const FAV_LIST = "/bookmark/list";
+export const FAV_TOGGLE = "/bookmark";
+export const FAV_LIST = "/bookmark";
 
 // RESTAURANT
 export const RESTAURANT_LIST = "/restaurants"; // (식당 목록)
+export const RESTAURANT_DETAIL = (id) => "/restaurants/${id}";
 
 // REVIEW
 // GET /review/{restaurantId}

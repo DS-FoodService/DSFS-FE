@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 import api from './api/client';
 import {
-  AUTH_LOGIN, AUTH_SIGNUP, AUTH_ME,
+  AUTH_LOGIN, AUTH_SIGNUP,
   FAV_LIST, FAV_TOGGLE,
 } from './api/endpoints';
 
@@ -18,6 +18,7 @@ import SignUpPage from './Signin.jsx';
 import MenuPage from './MenuPage.jsx';
 import OffCampusPage from './OffCampusPage.jsx';
 import DetailPage from "./DetailPage.jsx";
+import MyReviews from "./MyReviews.jsx";
 
 //import { KAKAO_APP_KEY } from './AuthContext.jsx';
 const FAKE_API_URL = '/api'; 
@@ -57,17 +58,25 @@ export default function App() {
   }, []);
 
   // --- 1. 인증 관련 로직
-  useEffect(() => {
-  const fetchUserWithToken = async () => {
+useEffect(() => {
+  const fetchAuthData = async () => {
     if (token) {
       try {
-        const { data: userData } = await api.get(AUTH_ME);
-        const { data: favData }  = await api.get(FAV_LIST);
-        setUser(userData);
-        setFavorites(favData?.favorites || []);
+        // 토큰이 있으면 즐겨찾기 & 리뷰 목록을 불러와 인증 확인
+        const { data: favData } = await api.get(FAV_LIST);
+        const { data: reviewData } = await api.get(REVIEWS_LIST);
+
+        // 성공 시 유저를 “로그인된 상태”로 인식
+        setUser({ isLoggedIn: true });
+        setFavorites(
+          favData?.result?.restaurants?.map((r) => r.restaurantId) || []
+        );
+
+        console.log("즐겨찾기 목록:", favData);
+        console.log("내 리뷰 목록:", reviewData);
       } catch (error) {
-        console.error("Token login failed:", error);
-        localStorage.removeItem('token');
+        console.error("Token 기반 인증 실패:", error);
+        localStorage.removeItem("token");
         setToken(null);
         setUser(null);
         setFavorites([]);
@@ -75,7 +84,7 @@ export default function App() {
     }
     setIsAuthReady(true);
   };
-  fetchUserWithToken();
+  fetchAuthData();
 }, [token]);
 
 // 로그인 
@@ -86,6 +95,7 @@ const login = async (email, password) => {
 
     // 서버 응답 구조에 맞게 accessToken 가져오기
     const tokenFromServer = data.result?.accessToken;
+
     if (!tokenFromServer) {
       throw new Error("로그인 응답에 토큰이 없습니다.");
     }
@@ -93,6 +103,12 @@ const login = async (email, password) => {
     // 토큰 저장
     localStorage.setItem("token", tokenFromServer);
     setToken(tokenFromServer);
+
+ const { data: favData } = await api.get(FAV_LIST);
+    setUser({ isLoggedIn: true });
+    setFavorites(
+      favData?.result?.restaurants?.map((r) => r.restaurantId) || []
+    );
 
     alert("로그인 성공!");
     setPage("home");
@@ -122,13 +138,10 @@ const signup = async (email, password) => {
   }
 };
 
-
+//가게 목록 찜하기 조회
 const toggleFavorite = async (restaurantId) => {
   try {
-    const { data } = await api.post(FAV_TOGGLE, { restaurantId }); // axios instance 사용
-    console.log("찜 토글 응답:", data);
-
-    // UI 상태 반영
+    await api.post(`${FAV_TOGGLE}/${restaurantId}`);
     setFavorites((prev) =>
       prev.includes(restaurantId)
         ? prev.filter((id) => id !== restaurantId)
@@ -156,6 +169,8 @@ const toggleFavorite = async (restaurantId) => {
       return <OffCampusPage setPage={setPage} />; 
       case 'detail':                            
       return <DetailPage setPage={setPage} restaurantId={page.restaurantId} />;
+      case "myreviews": return <MyReviews setPage={setPage} />;
+      
     }
   };
 

@@ -40,6 +40,12 @@ export const Header = ({ setPage }) => {
                 <button onClick={() => setPage('offcampus')} className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-lime-100">
                   학교 밖 식당
                 </button>
+                <button
+  onClick={() => setPage("myreviews")}
+  className="text-lime-700 font-semibold hover:underline"
+>
+  내 리뷰 보기
+</button>
               </div>
             </div>
 
