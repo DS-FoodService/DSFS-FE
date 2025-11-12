@@ -1,30 +1,46 @@
-import React, { useRef } from 'react';
-import RestaurantCard from './RestaurantCard.jsx';
+// ✅ HomePage.jsx
+import React, { useEffect, useState, useRef } from "react";
+import api from "./api/client";
+import { RESTAURANT_LIST } from "./api/endpoints";
+import RestaurantCard from "./RestaurantCard.jsx";
 import { images } from "./data/images";
 
 export const HomePage = ({ setPage }) => {
+  const [restaurants, setRestaurants] = useState([]);
+
   const onCampusRef = useRef(null);
   const offCampusRef = useRef(null);
 
   const scrollToRef = (ref) => {
-    ref.current?.scrollIntoView({ behavior: 'smooth' });
+    ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // mainfood 이미지 가져오기
-  const mainFoodImage = images.find(i => i.name === "mainfood")?.src;
+  // ✅ mainfood 이미지
+  const mainFoodImage = images.find((i) => i.name === "mainfood")?.src;
 
-  // 임시 데이터
-  const onCampusRestaurants = [
-    { id: 'resto_1', name: '오늘의 메뉴', rating: 4.5, reviewCount: 100, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/F0E7D8/333?text=Food+1' },
-    { id: 'resto_2', name: '비바쿡', rating: 4.2, reviewCount: 80, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/D8F0E7/333?text=Food+2' },
-    { id: 'resto_3', name: '포한끼', rating: 4.0, reviewCount: 50, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/E7D8F0/333?text=Food+3' },
-  ];
+  // ✅ 식당 목록 불러오기
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const { data } = await api.get(RESTAURANT_LIST);
 
-  const offCampusRestaurants = [
-    { id: 'resto_4', name: '양국', rating: 4.8, reviewCount: 100, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/F0D8D8/333?text=Food+4' },
-    { id: 'resto_5', name: '사리원', rating: 4.3, reviewCount: 80, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/D8D8F0/333?text=Food+5' },
-    { id: 'resto_6', name: '엘수에뇨', rating: 4.6, reviewCount: 50, icon: '아이콘', imageUrl: 'https://placehold.co/184x184/F0EED8/333?text=Food+6' },
-  ];
+        console.log("✅ 식당 목록 API 응답:", data);
+
+        // ✅ API 구조: result.restaurants
+        const fetched = data.result?.restaurants || [];
+
+        setRestaurants(data.result?.restaurants || []);
+      } catch (error) {
+        console.error("❌ 식당 목록을 불러오는 중 오류 발생:", error.response?.status, error.response?.data);
+      }
+    };
+
+    fetchRestaurants();
+  }, []);
+
+  // ✅ 일단 화면 구성 위해 앞 3개는 학식, 뒤 3개는 외부 식당으로 분리
+  const onCampusRestaurants = restaurants.slice(0, 3);
+  const offCampusRestaurants = restaurants.slice(3, 6);
 
   return (
     <div className="bg-lime-50/30">
@@ -65,7 +81,6 @@ export const HomePage = ({ setPage }) => {
         </div>
       </div>
 
-
       {/* --- 2. Find the place! --- */}
       <div className="py-20 bg-white">
         <div className="container mx-auto max-w-6xl px-6">
@@ -99,23 +114,23 @@ export const HomePage = ({ setPage }) => {
         </div>
       </div>
 
-
       {/* --- 3. 학식당 --- */}
       <div ref={onCampusRef} className="py-16 bg-lime-50/30">
         <div className="container mx-auto max-w-7xl px-4">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-800">학식당</h2>
             <button
-              onClick={() => setPage('menu')}
+              onClick={() => setPage("menu")}
               className="px-6 py-2 bg-gradient-to-r from-lime-200 to-lime-400 text-lime-900 font-semibold rounded-full shadow-md hover:from-lime-300 hover:to-lime-500 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out"
             >
               See All
             </button>
           </div>
 
+          {/* ✅ 렌더링 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {onCampusRestaurants.map((resto) => (
-              <RestaurantCard key={resto.id} restaurant={resto} setPage={setPage} />
+              <RestaurantCard key={resto.restaurantId} restaurant={resto} />
             ))}
           </div>
         </div>
@@ -128,7 +143,7 @@ export const HomePage = ({ setPage }) => {
             <h2 className="text-3xl font-bold text-gray-800">학교 밖 식당</h2>
 
             <button
-              onClick={() => setPage('offcampus')}
+              onClick={() => setPage("offcampus")}
               className="px-6 py-2 bg-gradient-to-r from-lime-200 to-lime-400 text-lime-900 font-semibold rounded-full shadow-md hover:from-lime-300 hover:to-lime-500 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out"
             >
               See All
@@ -137,12 +152,11 @@ export const HomePage = ({ setPage }) => {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {offCampusRestaurants.map((resto) => (
-              <RestaurantCard key={resto.id} restaurant={resto} setPage={setPage} />
+              <RestaurantCard key={resto.restaurantId} restaurant={resto} />
             ))}
           </div>
         </div>
       </div>
-
     </div>
   );
 };

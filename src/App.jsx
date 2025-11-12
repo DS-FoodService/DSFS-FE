@@ -17,6 +17,7 @@ import LoginPage from './login.jsx';
 import SignUpPage from './Signin.jsx';
 import MenuPage from './MenuPage.jsx';
 import OffCampusPage from './OffCampusPage.jsx';
+import DetailPage from "./DetailPage.jsx";
 
 //import { KAKAO_APP_KEY } from './AuthContext.jsx';
 const FAKE_API_URL = '/api'; 
@@ -81,24 +82,25 @@ export default function App() {
 const login = async (email, password) => {
   try {
     const { data } = await api.post(AUTH_LOGIN, { email, password });
+    console.log("로그인 응답:", data);
 
-    console.log("로그인 응답:", data); // ✅ 확인용 콘솔
-
+    // 서버 응답 구조에 맞게 accessToken 가져오기
     const tokenFromServer = data.result?.accessToken;
-    if (!tokenFromServer) throw new Error("토큰이 응답에 없습니다.");
+    if (!tokenFromServer) {
+      throw new Error("로그인 응답에 토큰이 없습니다.");
+    }
 
+    // 토큰 저장
     localStorage.setItem("token", tokenFromServer);
     setToken(tokenFromServer);
 
     alert("로그인 성공!");
     setPage("home");
-
   } catch (err) {
     console.error("로그인 오류:", err);
     alert(err.response?.data?.message || "로그인 중 오류가 발생했습니다.");
   }
 };
-
 
 // 회원가입 
 const signup = async (email, password) => {
@@ -123,16 +125,17 @@ const signup = async (email, password) => {
 
 const toggleFavorite = async (restaurantId) => {
   try {
-    const { data } = await api.post(FAV_TOGGLE, { restaurantId });
+    const { data } = await api.post(FAV_TOGGLE, { restaurantId }); // axios instance 사용
+    console.log("찜 토글 응답:", data);
 
-    // 백엔드 응답 형식에 따라 반영
+    // UI 상태 반영
     setFavorites((prev) =>
       prev.includes(restaurantId)
         ? prev.filter((id) => id !== restaurantId)
         : [...prev, restaurantId]
     );
-
   } catch (err) {
+    console.error("❌ 찜 API 실패:", err);
     alert("로그인 후 이용해주세요.");
   }
 };
@@ -151,6 +154,8 @@ const toggleFavorite = async (restaurantId) => {
       return <MenuPage setPage={setPage} />;
       case 'offcampus':
       return <OffCampusPage setPage={setPage} />; 
+      case 'detail':                            
+      return <DetailPage setPage={setPage} restaurantId={page.restaurantId} />;
     }
   };
 

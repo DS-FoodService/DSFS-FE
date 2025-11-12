@@ -8,11 +8,10 @@ export const FAV_TOGGLE = "/bookmark/toggle";
 export const FAV_LIST = "/bookmark/list";
 
 // RESTAURANT
-export const RESTAURANT_LIST = "/restaurant"; // (식당 목록)
+export const RESTAURANT_LIST = "/restaurants"; // (식당 목록)
 
 // REVIEW
 // GET /review/{restaurantId}
-export const REVIEWS_LIST = "/review";       
-
+export const REVIEWS_LIST = "/reviews";       
 // POST /review/write
-export const REVIEW_CREATE = "/review/write";
+export const REVIEW_CREATE = "/reviews";

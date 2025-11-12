@@ -8,11 +8,11 @@ const instance = axios.create({
 
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-
-  const excludeAuth = ["/auth/signup", "/auth/login"]; // ✅ 회원가입/로그인 제외
+  const excludeAuth = ["/auth/signup", "/auth/login"];
 
   if (!excludeAuth.some((url) => config.url.includes(url)) && token) {
     config.headers.Authorization = `Bearer ${token}`;
+    console.log("✅ Authorization attached:", config.headers.Authorization);
   }
   return config;
 });

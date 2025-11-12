@@ -2,6 +2,7 @@
 import { createContext, useContext, useState } from "react";
 import axios from "axios";
 import { API_BASE_URL } from "./config.js";   // config.js 의 BASE URL 사용
+import api from "./api/client";
 
 export const AuthContext = createContext(null);
 
@@ -55,8 +56,8 @@ export const AuthProvider = ({ children }) => {
   const token = localStorage.getItem("token");
   if (!token) return alert("로그인 후 이용해주세요.");
 
-  await axios.post(
-    `${API_BASE_URL}/bookmark/${restaurantId}`,
+  await api.post(
+    `/bookmark/${restaurantId}`,
     {},
     {
       headers: {
