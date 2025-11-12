@@ -51,22 +51,27 @@ export const AuthProvider = ({ children }) => {
 
 
   /* 북마크 (찜) 토글 */
-  const toggleFavorite = async (restoId) => {
-    const token = localStorage.getItem("token");
-    if (!token) return alert("로그인이 필요한 기능입니다.");
+  const toggleFavorite = async (restaurantId, isCurrentlyFavorite) => {
+  const token = localStorage.getItem("token");
+  if (!token) return alert("로그인 후 이용해주세요.");
 
-    await axios.post(
-      `${API_BASE_URL}/bookmark/${restoId}`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+  await axios.post(
+    `${API_BASE_URL}/bookmark/${restaurantId}`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
 
-    setFavorites((prev) =>
-      prev.includes(restoId)
-        ? prev.filter((id) => id !== restoId)
-        : [...prev, restoId]
-    );
-  };
+  // UI 즉시 반영
+  setFavorites(prev =>
+    isCurrentlyFavorite
+      ? prev.filter(id => id !== restaurantId)
+      : [...prev, restaurantId]
+  );
+};
 
 
   return (
