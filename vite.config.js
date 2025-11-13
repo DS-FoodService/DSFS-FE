@@ -11,7 +11,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: true, // 백엔드가 https면 true 권장
         // 필요 시 경로 조정:
-        rewrite: (path) => path.replace(/^\/api/, ""),
+        //rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
   },

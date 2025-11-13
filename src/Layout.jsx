@@ -54,20 +54,30 @@ export const Footer = ({ setPage }) => {
       <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row justify-between gap-10">
         
         {/* 1. 밥상 */}
-        {/* [수정] 사용자 코드: flex, items-center/lg:items-start, lg:w-1/4 추가 */}
-        <div className="space-y-4 flex flex-col items-center lg:items-start lg:w-1/4"> 
-          <h3 className="text-2xl font-bold text-white">밥상나침반</h3>
-          <p className="text-sm">Food Dash ©2025 All Rights Reserved</p>
-          {/* [추가] By Rim */}
-          <p className="text-sm">By - Babsang </p> 
-          {/* [추가] Follow Us On */}
-          <p className="text-lg font-semibold text-white mt-4">Follow Us On</p> 
-          {/* [수정] 사용자 코드의 a 태그 대신 임시 아이콘 */}
-          <div className="flex space-x-4"> 
-          // 인스타그램넣기
-            <span className="w-8 h-8 bg-gray-700 rounded-full flex items-center justify-center text-sm">?</span>
-          </div>
-        </div>
+<div className="space-y-4 flex flex-col items-center lg:items-start lg:w-1/4">
+  <h3 className="text-2xl font-bold text-white">밥상</h3>
+  <p className="text-sm">Food Dash ©2025 All Rights Reserved</p>
+  <p className="text-sm">By - Babsang</p>
+
+  <p className="text-lg font-semibold text-white mt-4">Follow Us On</p>
+
+  {/* ✅ 인스타그램 아이콘 */}
+  <div className="flex space-x-4">
+    <a
+      href="https://www.instagram.com/duksung_babsang/"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="w-8 h-8 bg-gray-700 hover:bg-pink-600 rounded-full flex items-center justify-center text-white transition-colors"
+      aria-label="duksung_babsang Instagram"
+    >
+      {/* 인스타그램 아이콘 (이모지나 아이콘 컴포넌트로 대체 가능) */}
+      <i className="fab fa-instagram text-lg"></i>
+      {/* 또는 단순 이모지: 📷 */}
+      {/* 📷 */}
+    </a>
+  </div>
+</div>
+
 
         {/* 2. Menu */}
         {/* [수정] 사용자 코드: flex, items-center/lg:items-start, lg:w-1/4 추가 */}

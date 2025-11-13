@@ -1,14 +1,15 @@
-// api/client.js
+// src/api/client.js
 import axios from "axios";
 
-const api = axios.create({
-  baseURL: "/api", // ✅ 프록시 경로
-});
+const isProduction = import.meta.env.MODE === "production";
 
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
+const api = axios.create({
+  baseURL: isProduction
+    ? "https://api.babsang.shop" // ✅ 배포용
+    : "/api",                    // ✅ 로컬 개발용 (Vite proxy 사용)
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 export default api;

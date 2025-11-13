@@ -78,19 +78,27 @@ export default function App() {
   };
 
   const signup = async (email, password, navigate) => {
-    try {
-      const { data } = await api.post(AUTH_SIGNUP, { email, password });
-      const tokenFromServer = data.result?.accessToken;
-      if (!tokenFromServer) throw new Error("토큰이 응답에 없습니다.");
-      localStorage.setItem("token", tokenFromServer);
-      setToken(tokenFromServer);
-      alert("회원가입이 완료되었습니다.");
-      navigate("/");
-    } catch (err) {
-      console.error("회원가입 오류:", err);
-      alert(err.response?.data?.message || "회원가입 중 오류가 발생했습니다.");
-    }
-  };
+  try {
+    const { data } = await api.post("/auth/signup", {
+      userEmail: email,     // 서버 요구 이름에 맞춰 변경
+      userPw: password,
+    });
+    console.log("회원가입 응답:", data);
+
+    // 실제 응답 구조 확인 후 여기를 맞춰야 함
+    const tokenFromServer = data.accessToken || data.result?.accessToken;
+    if (!tokenFromServer) throw new Error("토큰이 응답에 없습니다.");
+
+    localStorage.setItem("token", tokenFromServer);
+    setToken(tokenFromServer);
+    alert("회원가입이 완료되었습니다!");
+    navigate("/");
+  } catch (err) {
+    console.error("회원가입 오류:", err);
+    alert(err.response?.data?.message || "회원가입 중 오류가 발생했습니다.");
+  }
+};
+
 
   const logout = () => {
     localStorage.removeItem("token");
