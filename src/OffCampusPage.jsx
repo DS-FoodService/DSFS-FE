@@ -3,6 +3,7 @@ import { useAuth } from "./AuthContext.jsx";
 import { images } from "./data/images";
 import axios from "axios";
 import { API_BASE_URL } from "./config";
+import api from "./api/client";
 
 // 리뷰 UI
 import ReviewList from "./ReviewList";
@@ -98,7 +99,7 @@ const OffCampusPage = ({ setPage }) => {
   // 식당 데이터 불러오기
   useEffect(() => {
   const fetchRestaurants = async () => {
-    const { data } = await api.get(RESTAURANTS);
+    const { data } = await api.get("/restaurant/offcampus");
     setRestaurants(data.result);
   };
 

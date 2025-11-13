@@ -1,5 +1,7 @@
 import axios from "axios";
-import { API_BASE_URL } from "../config.js";
+
+// baseURL에 /api/api 추가
+export const API_BASE_URL = "/api/api";
 
 const instance = axios.create({
   baseURL: API_BASE_URL,
@@ -12,7 +14,7 @@ instance.interceptors.request.use((config) => {
 
   if (!excludeAuth.some((url) => config.url.includes(url)) && token) {
     config.headers.Authorization = `Bearer ${token}`;
-    console.log("✅ Authorization attached:", config.headers.Authorization);
+    console.log("Authorization attached:", config.headers.Authorization);
   }
   return config;
 });

@@ -141,7 +141,7 @@ export const MenuPage = ({ setPage }) => {
           </div>
         </div>
 
-        {/* ✅ 필터 아이콘 (이미지만 표시됨) */}
+        {/* 필터 아이콘 (이미지만 표시됨) */}
         <div className="flex flex-wrap gap-3 mb-6">
           {FILTERS.map((f) => (
             <button
