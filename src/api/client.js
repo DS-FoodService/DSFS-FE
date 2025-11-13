@@ -1,22 +1,14 @@
+// api/client.js
 import axios from "axios";
 
-// baseURL에 /api/api 추가
-export const API_BASE_URL = "/api/api";
-
-const instance = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: false,
+const api = axios.create({
+  baseURL: "/api", // ✅ 프록시 경로
 });
 
-instance.interceptors.request.use((config) => {
+api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
-  const excludeAuth = ["/auth/signup", "/auth/login"];
-
-  if (!excludeAuth.some((url) => config.url.includes(url)) && token) {
-    config.headers.Authorization = `Bearer ${token}`;
-    console.log("Authorization attached:", config.headers.Authorization);
-  }
+  if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-export default instance;
+export default api;

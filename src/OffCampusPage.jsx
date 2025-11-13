@@ -1,170 +1,184 @@
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "./AuthContext.jsx";
-import { images } from "./data/images";
-import axios from "axios";
-import { API_BASE_URL } from "./config";
+import { useNavigate } from "react-router-dom";
 import api from "./api/client";
-
-// 리뷰 UI
-import ReviewList from "./ReviewList";
-import ReviewForm from "./ReviewForm";
+import { images } from "./data/images";
 
 const KAKAO_APP_KEY = "8668be1b8e7bcc2a3ba8e26af8f107c6";
 
-function RestaurantSection({ restaurant }) {
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  return (
-    <div className="space-y-4 p-4">
-      <h2 className="text-xl font-bold">{restaurant.name}</h2>
-      <ReviewForm restaurantId={restaurant.id} onCreated={() => setRefreshKey(k => k + 1)} />
-      <div key={refreshKey}>
-        <ReviewList restaurantId={restaurant.id} />
-      </div>
-    </div>
-  );
-}
-
-const KakaoMap = ({ restaurants, selectedRestaurant, toggleFavorite, favorites }) => {
+const KakaoMap = ({ restaurants, selectedRestaurant }) => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
+  const [userPos, setUserPos] = useState(null);
+  const navigate = useNavigate();
 
+  // ✅ 지도 초기화
   useEffect(() => {
-    const loadMap = () => {
-      if (!window.kakao?.maps || !mapRef.current || map) return;
-
+    const initMap = () => {
+      if (!window.kakao?.maps || !mapRef.current) return;
       const kakaoMap = new window.kakao.maps.Map(mapRef.current, {
-        center: new window.kakao.maps.LatLng(37.5665, 126.978),
+        center: new window.kakao.maps.LatLng(37.6514, 127.016),
         level: 4,
       });
-
       setMap(kakaoMap);
 
-      // 내 위치
+      // ✅ 내 위치
       if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition((pos) => {
-          const userPos = new window.kakao.maps.LatLng(pos.coords.latitude, pos.coords.longitude);
-          kakaoMap.setCenter(userPos);
-          new window.kakao.maps.Marker({ map: kakaoMap, position: userPos });
-        });
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const myPos = new window.kakao.maps.LatLng(
+              pos.coords.latitude,
+              pos.coords.longitude
+            );
+            setUserPos(myPos);
+            new window.kakao.maps.Marker({ position: myPos, map: kakaoMap });
+            kakaoMap.setCenter(myPos);
+          },
+          () => console.warn("위치 접근 실패 — 기본 중심 유지")
+        );
       }
     };
 
-    if (!document.getElementById("kakao-maps-sdk")) {
-      const script = document.createElement("script");
-      script.id = "kakao-maps-sdk";
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false&libraries=services,clusterer`;
-      script.async = true;
-      script.onload = () => window.kakao.maps.load(loadMap);
-      document.head.appendChild(script);
+    if (window.kakao && window.kakao.maps) {
+      initMap();
     } else {
-      window.kakao.maps.load(loadMap);
+      const script = document.createElement("script");
+      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
+      script.async = true;
+      script.onload = () => window.kakao.maps.load(initMap);
+      document.head.appendChild(script);
     }
   }, []);
 
+  // ✅ 식당 마커
   useEffect(() => {
-    if (!map) return;
+    if (!map || !restaurants?.length) return;
 
     const markers = restaurants.map((resto) => {
-      const marker = new window.kakao.maps.Marker({
-        position: new window.kakao.maps.LatLng(resto.lat, resto.lng),
-        map,
-      });
-
+      if (!resto.lat || !resto.lng) return null;
+      const pos = new window.kakao.maps.LatLng(resto.lat, resto.lng);
+      const marker = new window.kakao.maps.Marker({ position: pos, map });
       window.kakao.maps.event.addListener(marker, "click", () => {
-        toggleFavorite(resto.id);
+        navigate(`/detail/${resto.id}`);
       });
-
       return marker;
-    });
+    }).filter(Boolean);
 
     return () => markers.forEach((m) => m.setMap(null));
-  }, [restaurants, map]);
+  }, [map, restaurants]);
 
+  // ✅ 중심 이동
   useEffect(() => {
-    if (!map || !selectedRestaurant) return;
-    map.panTo(new window.kakao.maps.LatLng(selectedRestaurant.lat, selectedRestaurant.lng));
-  }, [selectedRestaurant, map]);
+    if (!map) return;
+    if (selectedRestaurant) {
+      const moveTo = new window.kakao.maps.LatLng(
+        selectedRestaurant.lat,
+        selectedRestaurant.lng
+      );
+      map.panTo(moveTo);
+    } else if (userPos) {
+      map.setCenter(userPos);
+    }
+  }, [selectedRestaurant, userPos, map]);
 
-  return <div ref={mapRef} className="w-full h-full" />;
+  return (
+    <div ref={mapRef} className="w-full h-full">
+      {!window.kakao && (
+        <div className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-500">
+          지도 로드 중... (Kakao API 키 확인)
+        </div>
+      )}
+    </div>
+  );
 };
 
-const OffCampusPage = ({ setPage }) => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeFilters, setActiveFilters] = useState([]);
-  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+// ✅ 페이지
+export default function OffCampusPage() {
   const [restaurants, setRestaurants] = useState([]);
-  const { favorites, toggleFavorite } = useAuth(); // AuthContext에서 가져옴
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
+  const [activeFilters, setActiveFilters] = useState([]);
 
-  // 식당 데이터 불러오기
-  useEffect(() => {
-  const fetchRestaurants = async () => {
-    const { data } = await api.get("/restaurant/offcampus");
-    setRestaurants(data.result);
-  };
-
-  fetchRestaurants();
-}, []);
-
+  // ✅ 아이콘 필터 정의
   const FILTERS = [
-    { id: "gluten_free", icon: images.find(i => i.name === "gluten")?.src },
-    { id: "halal",        icon: images.find(i => i.name === "halal")?.src },
-    { id: "byo",          icon: images.find(i => i.name === "byo")?.src },
-    { id: "vegan",        icon: images.find(i => i.name === "vegan")?.src },
-    { id: "local",        icon: images.find(i => i.name === "local")?.src },
+    { id: "gluten_free", name: "Gluten-Free", icon: images.find(i => i.name.includes("gluten"))?.src },
+    { id: "halal", name: "Halal", icon: images.find(i => i.name.includes("halal"))?.src },
+    { id: "byo", name: "BYO", icon: images.find(i => i.name.includes("byo"))?.src },
+    { id: "vegan", name: "Vegan", icon: images.find(i => i.name.includes("vegan"))?.src },
+    { id: "local", name: "Local", icon: images.find(i => i.name.includes("local"))?.src },
   ];
 
-  const filteredRestaurants = restaurants.filter((resto) => (
-    (!searchTerm || resto.name.toLowerCase().includes(searchTerm.toLowerCase())) &&
-    (activeFilters.length === 0 || activeFilters.every((id) => resto.tags.includes(id)))
-  ));
+  const handleFilterToggle = (filterId) => {
+    setActiveFilters((prev) =>
+      prev.includes(filterId)
+        ? prev.filter((id) => id !== filterId)
+        : [...prev, filterId]
+    );
+  };
+
+  // ✅ 데이터 로드
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const { data } = await api.get("/restaurant/offcampus");
+        if (data?.result?.length > 0) {
+          setRestaurants(data.result);
+        } else {
+          throw new Error("응답 비어 있음");
+        }
+      } catch (err) {
+        console.error("❌ 식당 데이터 로드 실패:", err);
+        setRestaurants([
+          { id: 1, name: "양국", lat: 37.653, lng: 127.013, tags: ["local"] },
+          { id: 2, name: "밀콩제면소", lat: 37.652, lng: 127.012, tags: ["vegan"] },
+        ]);
+      }
+    };
+    fetchRestaurants();
+  }, []);
+
+  const filteredRestaurants = restaurants.filter(
+    (r) =>
+      activeFilters.length === 0 ||
+      activeFilters.every((f) => r.tags?.includes(f))
+  );
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-64px)]">
-
       {/* 왼쪽 패널 */}
       <div className="w-full md:w-1/3 lg:w-1/4 p-6 bg-white overflow-y-auto">
         <h1 className="text-3xl font-bold mb-6">학교 밖 식당</h1>
 
-        <input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="식당 또는 메뉴 검색..."
-          className="w-full pl-10 pr-4 py-3 mb-4 border-2 rounded-full"
-        />
-
-        {/* 필터 아이콘 */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        {/* ✅ 필터 아이콘 */}
+        <div className="flex flex-wrap gap-0 mb-6">
           {FILTERS.map((f) => (
             <button
               key={f.id}
-              onClick={() =>
-                setActiveFilters((prev) => prev.includes(f.id) ? prev.filter((x) => x !== f.id) : [...prev, f.id])
-              }
-              className={`${activeFilters.includes(f.id) ? "scale-110" : "opacity-75 hover:opacity-100"} transition`}
+              onClick={() => handleFilterToggle(f.id)}
+              className={`p-1 transition-all ${
+                activeFilters.includes(f.id)
+                  ? "scale-110"
+                  : "opacity-70 hover:opacity-100"
+              }`}
             >
-              <img src={f.icon} className="w-19 h-8" />
+              <img src={f.icon} alt={f.name} className="w-16 h-16 object-contain" />
             </button>
           ))}
         </div>
 
-        {selectedRestaurant && <RestaurantSection restaurant={selectedRestaurant} />}
-
-        {/* 식당 목록 */}
-        <div className="space-y-4">
+        <ul className="space-y-4">
           {filteredRestaurants.map((resto) => (
-            <div
+            <li
               key={resto.id}
-              className={`p-3 border rounded-md cursor-pointer ${
-                selectedRestaurant?.id === resto.id ? "border-lime-500 bg-lime-100" : "border-gray-200"
-              }`}
               onClick={() => setSelectedRestaurant(resto)}
+              className={`cursor-pointer border p-3 rounded-md ${
+                selectedRestaurant?.id === resto.id
+                  ? "bg-lime-100 border-lime-500"
+                  : "border-gray-200"
+              }`}
             >
-              <h2 className="font-bold">{resto.name}</h2>
-              <p className="text-sm text-gray-500">{resto.tags.join(", ")}</p>
-            </div>
+              {resto.name}
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
 
       {/* 오른쪽 지도 */}
@@ -172,13 +186,8 @@ const OffCampusPage = ({ setPage }) => {
         <KakaoMap
           restaurants={filteredRestaurants}
           selectedRestaurant={selectedRestaurant}
-          toggleFavorite={toggleFavorite}
-          favorites={favorites}
         />
       </div>
-
     </div>
   );
-};
-
-export default OffCampusPage;
+}

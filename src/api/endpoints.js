@@ -3,8 +3,8 @@ export const AUTH_SIGNUP = "/auth/signup";
 export const AUTH_LOGIN = "/auth/login";
 
 // BOOKMARK (찜)
-export const FAV_TOGGLE = "/bookmark";
-export const FAV_LIST = "/bookmark";
+export const FAV_TOGGLE = "/api/bookmark";
+export const FAV_LIST = "/api/bookmark";
 
 // RESTAURANT
 export const RESTAURANT_LIST = "/restaurants"; // (식당 목록)

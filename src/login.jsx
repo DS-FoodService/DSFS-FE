@@ -1,20 +1,21 @@
 // src/LoginPage.jsx
 import React, { useState } from "react";
 import { useAuth } from "./AuthContext.jsx";
+import { useNavigate } from "react-router-dom"; 
 import { images } from "./data/images"; // 자동 이미지 import
 
-const LoginPage = ({ setPage }) => {
+const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const navigate = useNavigate();  // 라우터용 네비게이터
 
   /** 이미지 찾기: log.png */
-  // images.js 안에 name 또는 id 로 찾기 (둘 중 하나만 맞으면 자동 가져옴)
   const loginBg =
     images.find((img) => img.name === "log" || img.id === "img_log")?.src ||
-    "/assets/log.png"; // 혹시 못 찾으면 폴더 경로 fallback
+    "/assets/log.png";
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -22,11 +23,12 @@ const LoginPage = ({ setPage }) => {
     setLoading(true);
 
     try {
-      await login(email, password); // 로그인 요청
-      setPage("home"); // 로그인 성공 → 홈 이동
+      // ✅ App.jsx의 login 함수에 navigate 전달
+      await login(email, password, navigate);
     } catch (err) {
+      console.error("로그인 실패:", err);
       setError(err.message || "로그인 실패!");
-      setPage("signup"); // 로그인 실패 → 회원가입 이동
+      navigate("/signup"); // ✅ 로그인 실패 → 회원가입 페이지로 이동
     } finally {
       setLoading(false);
     }
@@ -39,9 +41,9 @@ const LoginPage = ({ setPage }) => {
         {/* ✅ 왼쪽 이미지 */}
         <div className="hidden md:block md:w-1/2">
           <img
-   src="/assets/restaurants/log.png"
-   alt="Login Side Illustration"
-   className="w-full h-full object-cover"
+            src={loginBg}
+            alt="Login Side Illustration"
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -97,7 +99,7 @@ const LoginPage = ({ setPage }) => {
             <p className="text-sm text-gray-600">
               Don't have an account?{" "}
               <button
-                onClick={() => setPage("signup")}
+                onClick={() => navigate("/signup")}  // ✅ 수정된 부분
                 className="font-medium text-lime-600 hover:text-lime-500"
               >
                 Sign up

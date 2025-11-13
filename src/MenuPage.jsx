@@ -27,7 +27,8 @@ function RestaurantSection({ restaurant }) {
   );
 }
 
-const allOnCampusRestaurants = [
+// ✅ 학내 식당만 남김
+const onCampusRestaurants = [
   {
     id: 'resto_1',
     name: '오늘의 메뉴',
@@ -67,32 +68,6 @@ const allOnCampusRestaurants = [
       { name: '분짜', tags: [] }
     ]
   },
-  {
-    id: 'resto_10',
-    name: '미구엘의 돈까스가게',
-    rating: 4.6,
-    reviewCount: 120,
-    icon: '일식',
-    imageUrl: 'https://placehold.co/184x184/F0F0D8/333?text=Food+4',
-    tags: ['byo'],
-    menus: [
-      { name: '등심 돈까스', tags: ['byo'] },
-      { name: '치즈 돈까스', tags: ['byo'] }
-    ]
-  },
-  {
-    id: 'resto_11',
-    name: '한우사골 마라탕',
-    rating: 4.3,
-    reviewCount: 50,
-    icon: '중식',
-    imageUrl: 'https://placehold.co/184x184/F0D8E8/333?text=Food+5',
-    tags: ['halal', 'local'],
-    menus: [
-      { name: '마라탕', tags: ['halal', 'local'] },
-      { name: '마라샹궈', tags: ['halal', 'local'] }
-    ]
-  },
 ];
 
 export const MenuPage = ({ setPage }) => {
@@ -107,7 +82,7 @@ export const MenuPage = ({ setPage }) => {
     );
   };
 
-  const filteredRestaurants = allOnCampusRestaurants.filter((resto) => {
+  const filteredRestaurants = onCampusRestaurants.filter((resto) => {
     const searchTermLower = searchTerm.toLowerCase();
     const matchesSearch =
       resto.name.toLowerCase().includes(searchTermLower) ||
@@ -141,18 +116,15 @@ export const MenuPage = ({ setPage }) => {
           </div>
         </div>
 
-        {/* 필터 아이콘 (이미지만 표시됨) */}
-        <div className="flex flex-wrap gap-3 mb-6">
+        {/* 필터 아이콘 */}
+        <div className="flex flex-wrap gap-2 mb-6">
           {FILTERS.map((f) => (
             <button
               key={f.id}
               onClick={() => handleFilterToggle(f.id)}
-              className={`
-                p-1 transition-all
-                ${activeFilters.includes(f.id) ? "scale-110" : "opacity-70 hover:opacity-100"}
-              `}
+              className={`p-1 transition-all ${activeFilters.includes(f.id) ? "scale-110" : "opacity-70 hover:opacity-100"}`}
             >
-              <img src={f.icon} alt={f.name} className="w-17 h-17 object-contain" />
+              <img src={f.icon} alt={f.name} className="w-15 h-9 object-contain" />
             </button>
           ))}
         </div>
@@ -164,9 +136,7 @@ export const MenuPage = ({ setPage }) => {
               <RestaurantCard key={resto.id} restaurant={resto} setPage={setPage} />
             ))
           ) : (
-            <p className="text-gray-600 md:col-span-3 text-center text-lg">
-              검색 결과가 없습니다.
-            </p>
+            <p className="text-gray-600 md:col-span-3 text-center text-lg">검색 결과가 없습니다.</p>
           )}
         </div>
       </div>

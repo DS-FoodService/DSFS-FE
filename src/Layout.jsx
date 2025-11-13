@@ -1,150 +1,43 @@
-import React from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext.jsx";
 
-export const Header = ({ setPage }) => {
+export const Header = () => {
   const { user, isLoggedIn, logout } = useAuth();
-
-  const handleProfileClick = () => {
-    if (isLoggedIn) setPage("mypage"); // 나중에 구현
-    else setPage("signup");
-  };
+  const navigate = useNavigate();
 
   return (
     <header className="bg-lime-50/30 shadow-sm sticky top-0 z-50 backdrop-blur-md">
       <nav className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-
-          {/* 로고 */}
-          <div
-            className="flex items-center space-x-2 cursor-pointer"
-            onClick={() => setPage("home")}
-          >
-            <img
-              src="/assets/restaurants/밥상로고.png"
-              alt="밥상나침반 로고"
-              className="w-14 h-14 object-contain"
-            />
-            <span className="text-2xl font-bold text-lime-800 tracking-wide">
-              Babsang
-            </span>
+          <div className="flex items-center space-x-2 cursor-pointer" onClick={() => navigate("/")}>
+            <img src="/assets/restaurants/밥상로고.png" className="w-14 h-14 object-contain" />
+            <span className="text-2xl font-bold text-lime-800">Babsang</span>
           </div>
 
-          {/* 메뉴 */}
-          <div className="flex space-x-8 items-center font-semibold text-gray-700 text-lg">
-            <button
-              onClick={() => setPage("home")}
-              className="hover:text-lime-700 transition-colors duration-150"
-            >
-              Home
-            </button>
-
+          <div className="flex space-x-8">
+            <button onClick={() => navigate("/")} className="font-semibold text-gray-600 hover:text-lime-700">Home</button>
             <div className="relative group">
-              <button className="hover:text-lime-700 flex items-center transition-colors duration-150">
+              <button className="font-semibold text-gray-600 hover:text-lime-700 flex items-center">
                 Menu
-                <svg
-                  className="w-4 h-4 ml-1"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
               </button>
-
-              {/* 드롭다운 메뉴 */}
               <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white rounded-lg shadow-xl overflow-hidden hidden group-hover:block z-50">
-                <button
-                  onClick={() => setPage("menu")}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-lime-100"
-                >
-                  학식당
-                </button>
-                <button
-                  onClick={() => setPage("offcampus")}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-lime-100"
-                >
-                  학교 밖 식당
-                </button>
-                <button
-                  onClick={() => setPage("myreviews")}
-                  className="block w-full text-left px-4 py-3 text-gray-700 hover:bg-lime-100"
-                >
-                  내 리뷰 보기
-                </button>
+                <button onClick={() => navigate("/menu")} className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-lime-100">학식당</button>
+                <button onClick={() => navigate("/offcampus")} className="block w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-lime-100">학교 밖 식당</button>
+                <button onClick={() => navigate("/myreviews")} className="block w-full text-left px-4 py-3 text-sm text-lime-700 hover:underline">내 리뷰 보기</button>
               </div>
             </div>
-
-            <button
-              onClick={() => setPage("about")}
-              className="hover:text-lime-700 transition-colors duration-150"
-            >
-              About Us
-            </button>
+            <button onClick={() => navigate("/about")} className="font-semibold text-gray-600 hover:text-lime-700">About Us</button>
           </div>
 
-          {/* 프로필 및 사용자 정보 */}
           <div className="flex items-center space-x-4">
-            {/* 검색 */}
-            <button
-              onClick={() => console.log("검색")}
-              className="text-gray-600 hover:text-lime-700 transition"
-            >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
-              </svg>
-            </button>
-
-            {/* 프로필 이미지 */}
-            <button
-              onClick={handleProfileClick}
-              className="w-10 h-10 rounded-full bg-gray-300 overflow-hidden border-2 border-gray-400 hover:border-lime-500 transition"
-            >
-              <img
-                src={
-                  isLoggedIn
-                    ? `https://placehold.co/40x40/A9C388/FFFFFF?text=${user?.username?.[0]?.toUpperCase() || "U"}`
-                    : "https://placehold.co/40x40/E0E0E0/333?text=?"
-                }
-                alt="Profile"
-                className="w-full h-full object-cover"
-              />
-            </button>
-
-            {/* 로그인된 경우 표시 */}
             {isLoggedIn ? (
-              <div className="flex flex-col text-right">
-                <span className="text-sm font-medium text-gray-700">
-                  {user?.email || user?.username}
-                </span>
-                <button
-                  onClick={logout}
-                  className="text-xs text-red-500 hover:underline"
-                >
-                  로그아웃
-                </button>
-              </div>
+              <>
+                <span className="text-sm text-gray-700">{user?.email || "User"}</span>
+                <button onClick={logout} className="text-sm font-semibold text-gray-600 hover:text-lime-700">로그아웃</button>
+              </>
             ) : (
-              <button
-                onClick={() => setPage("login")}
-                className="text-sm font-semibold text-gray-600 hover:text-lime-700"
-              >
-                로그인
-              </button>
+              <button onClick={() => navigate("/login")} className="text-sm font-semibold text-gray-600 hover:text-lime-700">로그인</button>
             )}
           </div>
         </div>

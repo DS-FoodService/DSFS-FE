@@ -1,4 +1,3 @@
-// vite.config.js  ← 파일명 바꾸는 걸 추천 (ESM)
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 

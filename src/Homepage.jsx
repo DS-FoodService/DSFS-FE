@@ -1,12 +1,13 @@
-// ✅ HomePage.jsx
 import React, { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom"; 
 import api from "./api/client";
 import { RESTAURANT_LIST } from "./api/endpoints";
 import RestaurantCard from "./RestaurantCard.jsx";
 import { images } from "./data/images";
 
-export const HomePage = ({ setPage }) => {
+const HomePage = () => {
   const [restaurants, setRestaurants] = useState([]);
+  const navigate = useNavigate(); 
 
   const onCampusRef = useRef(null);
   const offCampusRef = useRef(null);
@@ -15,43 +16,45 @@ export const HomePage = ({ setPage }) => {
     ref.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // ✅ mainfood 이미지
+  // mainfood 이미지
   const mainFoodImage = images.find((i) => i.name === "mainfood")?.src;
 
-  // ✅ 식당 목록 불러오기
+  // 식당 목록 불러오기
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
         const { data } = await api.get(RESTAURANT_LIST);
 
-        console.log("✅ 식당 목록 API 응답:", data);
+        console.log("식당 목록 API 응답:", data);
 
-        // ✅ API 구조: result.restaurants
         const fetched = data.result?.restaurants || [];
-
-        setRestaurants(data.result?.restaurants || []);
+        setRestaurants(fetched);
       } catch (error) {
-        console.error("❌ 식당 목록을 불러오는 중 오류 발생:", error.response?.status, error.response?.data);
+        console.error(
+          "❌ 식당 목록을 불러오는 중 오류 발생:",
+          error.response?.status,
+          error.response?.data
+        );
       }
     };
 
     fetchRestaurants();
   }, []);
 
-  // ✅ 일단 화면 구성 위해 앞 3개는 학식, 뒤 3개는 외부 식당으로 분리
+  // 일단 화면 구성 위해 앞 3개는 학식, 뒤 3개는 외부 식당으로 분리
   const onCampusRestaurants = restaurants.slice(0, 3);
   const offCampusRestaurants = restaurants.slice(3, 6);
 
   return (
     <div className="bg-lime-50/30">
-
       {/* --- 1. 오늘 뭐 먹지? --- */}
       <div className="container mx-auto max-w-7xl px-4 py-16 sm:py-24">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-
           {/* 왼쪽 텍스트 */}
           <div className="flex flex-col justify-center items-start text-left space-y-6">
-            <h1 className="text-5xl lg:text-6xl font-bold text-gray-800">오늘 뭐 먹지?</h1>
+            <h1 className="text-5xl lg:text-6xl font-bold text-gray-800">
+              오늘 뭐 먹지?
+            </h1>
 
             <div className="flex gap-4">
               <button
@@ -85,12 +88,13 @@ export const HomePage = ({ setPage }) => {
       <div className="py-20 bg-white">
         <div className="container mx-auto max-w-6xl px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-12 text-center">
-
             <div className="flex items-center justify-center gap-4 hover:scale-105 transition-transform duration-300">
               <span className="text-5xl sm:text-6xl">📍</span>
               <div>
                 <h3 className="text-xl font-bold text-gray-800">Find the place!</h3>
-                <p className="text-gray-600 text-sm">Promise To Deliver Within 30 Mins</p>
+                <p className="text-gray-600 text-sm">
+                  Promise To Deliver Within 30 Mins
+                </p>
               </div>
             </div>
 
@@ -98,7 +102,9 @@ export const HomePage = ({ setPage }) => {
               <span className="text-5xl sm:text-6xl">✅</span>
               <div>
                 <h3 className="text-xl font-bold text-gray-800">Select the icon</h3>
-                <p className="text-gray-600 text-sm">Your Food Will Be Delivered 100% Fresh</p>
+                <p className="text-gray-600 text-sm">
+                  Your Food Will Be Delivered 100% Fresh
+                </p>
               </div>
             </div>
 
@@ -106,10 +112,11 @@ export const HomePage = ({ setPage }) => {
               <span className="text-5xl sm:text-6xl">📤</span>
               <div>
                 <h3 className="text-xl font-bold text-gray-800">Share</h3>
-                <p className="text-gray-600 text-sm">Your Food Link Is Absolutely Free</p>
+                <p className="text-gray-600 text-sm">
+                  Your Food Link Is Absolutely Free
+                </p>
               </div>
             </div>
-
           </div>
         </div>
       </div>
@@ -120,14 +127,14 @@ export const HomePage = ({ setPage }) => {
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-800">학식당</h2>
             <button
-              onClick={() => setPage("menu")}
+              onClick={() => navigate("/menu")}
               className="px-6 py-2 bg-gradient-to-r from-lime-200 to-lime-400 text-lime-900 font-semibold rounded-full shadow-md hover:from-lime-300 hover:to-lime-500 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out"
             >
               See All
             </button>
           </div>
 
-          {/* ✅ 렌더링 */}
+          {/* 렌더링 */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {onCampusRestaurants.map((resto) => (
               <RestaurantCard key={resto.restaurantId} restaurant={resto} />
@@ -143,7 +150,7 @@ export const HomePage = ({ setPage }) => {
             <h2 className="text-3xl font-bold text-gray-800">학교 밖 식당</h2>
 
             <button
-              onClick={() => setPage("offcampus")}
+              onClick={() => navigate("/offcampus")}
               className="px-6 py-2 bg-gradient-to-r from-lime-200 to-lime-400 text-lime-900 font-semibold rounded-full shadow-md hover:from-lime-300 hover:to-lime-500 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-300 ease-in-out"
             >
               See All

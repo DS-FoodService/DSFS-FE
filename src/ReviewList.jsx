@@ -7,7 +7,7 @@ export default function ReviewList({ restaurantId }) {
 
    useEffect(() => {
     const loadReviews = async () => {
-      const res = await api.get(`${REVIEWS_LIST}/${restaurantId}`);
+      const res = await api.get(`${REVIEWS_LIST}?query=restaurant&page=0&size=10`);
 
       // ✅ swagger 대응 (res.data.result.reviews)
       setReviews(res.data.result.reviews);
