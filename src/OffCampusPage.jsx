@@ -5,14 +5,13 @@ import { images } from "./data/images";
 
 const KAKAO_APP_KEY = "8668be1b8e7bcc2a3ba8e26af8f107c6";
 
-// ✅ Kakao 지도 컴포넌트
 const KakaoMap = ({ restaurants, selectedRestaurant }) => {
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
   const [userPos, setUserPos] = useState(null);
   const navigate = useNavigate();
 
-  // 지도 초기화
+  // ✅ 지도 초기화
   useEffect(() => {
     const initMap = () => {
       if (!window.kakao?.maps || !mapRef.current) return;
@@ -22,6 +21,7 @@ const KakaoMap = ({ restaurants, selectedRestaurant }) => {
       });
       setMap(kakaoMap);
 
+      // ✅ 내 위치
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (pos) => {
@@ -49,18 +49,16 @@ const KakaoMap = ({ restaurants, selectedRestaurant }) => {
     }
   }, []);
 
-  // 마커 추가
+  // ✅ 식당 마커
   useEffect(() => {
     if (!map || !restaurants?.length) return;
 
     const markers = restaurants.map((resto) => {
-      const lat = resto.latitude || resto.lat;
-      const lng = resto.longitude || resto.lng;
-      if (!lat || !lng) return null;
-      const pos = new window.kakao.maps.LatLng(lat, lng);
+      if (!resto.lat || !resto.lng) return null;
+      const pos = new window.kakao.maps.LatLng(resto.lat, resto.lng);
       const marker = new window.kakao.maps.Marker({ position: pos, map });
       window.kakao.maps.event.addListener(marker, "click", () => {
-        navigate(`/detail/${resto.restaurantId}`);
+        navigate(`/detail/${resto.id}`);
       });
       return marker;
     }).filter(Boolean);
@@ -68,13 +66,13 @@ const KakaoMap = ({ restaurants, selectedRestaurant }) => {
     return () => markers.forEach((m) => m.setMap(null));
   }, [map, restaurants]);
 
-  // 선택 시 지도 이동
+  // ✅ 중심 이동
   useEffect(() => {
     if (!map) return;
     if (selectedRestaurant) {
       const moveTo = new window.kakao.maps.LatLng(
-        selectedRestaurant.latitude,
-        selectedRestaurant.longitude
+        selectedRestaurant.lat,
+        selectedRestaurant.lng
       );
       map.panTo(moveTo);
     } else if (userPos) {
@@ -82,113 +80,82 @@ const KakaoMap = ({ restaurants, selectedRestaurant }) => {
     }
   }, [selectedRestaurant, userPos, map]);
 
-  return <div ref={mapRef} className="w-full h-full" />;
+  return (
+    <div ref={mapRef} className="w-full h-full">
+      {!window.kakao && (
+        <div className="flex items-center justify-center w-full h-full bg-gray-200 text-gray-500">
+          지도 로드 중... (Kakao API 키 확인)
+        </div>
+      )}
+    </div>
+  );
 };
 
-// ✅ OffCampusPage
+// ✅ 페이지
 export default function OffCampusPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
-  const [keyword, setKeyword] = useState("");
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
 
-  // 필터 목록
+  // ✅ 아이콘 필터 정의
   const FILTERS = [
-    { id: "HALAL", name: "Halal", icon: images.find(i => i.name.includes("halal"))?.src },
-    { id: "VEGAN", name: "Vegan", icon: images.find(i => i.name.includes("vegan"))?.src },
-    { id: "GF", name: "Gluten-Free", icon: images.find(i => i.name.includes("gluten"))?.src },
-    { id: "LOCAL", name: "Local", icon: images.find(i => i.name.includes("local"))?.src },
+    { id: "gluten_free", name: "Gluten-Free", icon: images.find(i => i.name.includes("gluten"))?.src },
+    { id: "halal", name: "Halal", icon: images.find(i => i.name.includes("halal"))?.src },
+    { id: "byo", name: "BYO", icon: images.find(i => i.name.includes("byo"))?.src },
+    { id: "vegan", name: "Vegan", icon: images.find(i => i.name.includes("vegan"))?.src },
+    { id: "local", name: "Local", icon: images.find(i => i.name.includes("local"))?.src },
   ];
 
-  const handleFilterToggle = (id) => {
+  const handleFilterToggle = (filterId) => {
     setActiveFilters((prev) =>
-      prev.includes(id) ? prev.filter((f) => f !== id) : [...prev, id]
+      prev.includes(filterId)
+        ? prev.filter((id) => id !== filterId)
+        : [...prev, filterId]
     );
   };
 
-  // ✅ 식당 데이터 불러오기 (검색 + 필터 반영)
-  const fetchRestaurants = async (searchValue = "") => {
-    try {
-      const params = {
-        query: "OFF_CAMPUS",
-        page: 0,
-        size: 30,
-      };
-      if (searchValue) params.keyword = searchValue;
-      if (activeFilters.length > 0) params.icons = activeFilters;
-
-      const { data } = await api.get("/restaurants", { params });
-      setRestaurants(data.result?.restaurants || []);
-    } catch (err) {
-      console.error("❌ 학교 밖 식당 불러오기 실패:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ✅ 페이지 로드 및 필터 변경 시 자동 호출
+  // ✅ 데이터 로드
   useEffect(() => {
-    fetchRestaurants(searchTerm);
-  }, [activeFilters]);
-
-  // ✅ 검색 실행
-  const handleSearch = () => {
-    setSearchTerm(keyword);
-    setLoading(true);
-    fetchRestaurants(keyword);
-  };
-
-  // ✅ 엔터 키로 검색
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter") handleSearch();
-  };
+    const fetchRestaurants = async () => {
+      try {
+        const { data } = await api.get("/restaurant/offcampus");
+        if (data?.result?.length > 0) {
+          setRestaurants(data.result);
+        } else {
+          throw new Error("응답 비어 있음");
+        }
+      } catch (err) {
+        console.error("❌ 식당 데이터 로드 실패:", err);
+        setRestaurants([
+          { id: 1, name: "양국", lat: 37.653, lng: 127.013, tags: ["local"] },
+          { id: 2, name: "밀콩제면소", lat: 37.652, lng: 127.012, tags: ["vegan"] },
+        ]);
+      }
+    };
+    fetchRestaurants();
+  }, []);
 
   const filteredRestaurants = restaurants.filter(
-    (r) => activeFilters.length === 0 || activeFilters.every((f) => r.icons?.includes(f))
+    (r) =>
+      activeFilters.length === 0 ||
+      activeFilters.every((f) => r.tags?.includes(f))
   );
-
-  if (loading)
-    return (
-      <div className="flex items-center justify-center min-h-screen text-gray-600">
-        로딩 중...
-      </div>
-    );
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-64px)]">
       {/* 왼쪽 패널 */}
-      <div className="w-full md:w-1/3 p-6 bg-white overflow-y-auto">
+      <div className="w-full md:w-1/3 lg:w-1/4 p-6 bg-white overflow-y-auto">
         <h1 className="text-3xl font-bold mb-6">학교 밖 식당</h1>
 
-        {/* ✅ 검색창 */}
-        <div className="flex mb-6">
-          <input
-            type="text"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="식당 이름 또는 키워드를 입력하세요"
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-lime-300 focus:outline-none"
-          />
-          <button
-            onClick={handleSearch}
-            className="px-6 py-2 bg-lime-400 text-white font-semibold rounded-r-lg hover:bg-lime-500 transition-colors"
-          >
-            검색
-          </button>
-        </div>
-
-        {/* ✅ 필터 */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        {/* ✅ 필터 아이콘 */}
+        <div className="flex flex-wrap gap-0 mb-6">
           {FILTERS.map((f) => (
             <button
               key={f.id}
               onClick={() => handleFilterToggle(f.id)}
               className={`p-1 transition-all ${
                 activeFilters.includes(f.id)
-                  ? "scale-110 border border-lime-400 rounded-md"
+                  ? "scale-110"
                   : "opacity-70 hover:opacity-100"
               }`}
             >
@@ -197,39 +164,29 @@ export default function OffCampusPage() {
           ))}
         </div>
 
-        {/* ✅ 결과 목록 */}
-        {searchTerm && (
-          <p className="text-gray-500 mb-4">
-            “{searchTerm}” 검색 결과 ({restaurants.length}개)
-          </p>
-        )}
-
-        <ul className="space-y-3">
-          {filteredRestaurants.length === 0 ? (
-            <li className="text-gray-500 text-center mt-10">
-              조건에 맞는 식당이 없습니다.
+        <ul className="space-y-4">
+          {filteredRestaurants.map((resto) => (
+            <li
+              key={resto.id}
+              onClick={() => setSelectedRestaurant(resto)}
+              className={`cursor-pointer border p-3 rounded-md ${
+                selectedRestaurant?.id === resto.id
+                  ? "bg-lime-100 border-lime-500"
+                  : "border-gray-200"
+              }`}
+            >
+              {resto.name}
             </li>
-          ) : (
-            filteredRestaurants.map((resto) => (
-              <li
-                key={resto.restaurantId}
-                onClick={() => setSelectedRestaurant(resto)}
-                className={`cursor-pointer border p-3 rounded-md ${
-                  selectedRestaurant?.restaurantId === resto.restaurantId
-                    ? "bg-lime-100 border-lime-500"
-                    : "border-gray-200"
-                }`}
-              >
-                {resto.name}
-              </li>
-            ))
-          )}
+          ))}
         </ul>
       </div>
 
-      {/* 지도 */}
-      <div className="w-full md:w-2/3 h-full">
-        <KakaoMap restaurants={filteredRestaurants} selectedRestaurant={selectedRestaurant} />
+      {/* 오른쪽 지도 */}
+      <div className="w-full md:w-2/3 lg:w-3/4 h-full">
+        <KakaoMap
+          restaurants={filteredRestaurants}
+          selectedRestaurant={selectedRestaurant}
+        />
       </div>
     </div>
   );
