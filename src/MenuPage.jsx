@@ -1,147 +1,102 @@
-import React, { useState } from 'react';
-import RestaurantCard from './RestaurantCard.jsx';
-import ReviewList from './ReviewList';
-import ReviewForm from './ReviewForm';
-import { images } from "./data/images";
+import { useEffect, useState } from "react";
+import api from "./api/client";
+import RestaurantCard from "./RestaurantCard";
 
-const FILTERS = [
-  { id: "gluten_free", name: "Gluten-Free", icon: images.find(i => i.name.includes("gluten"))?.src },
-  { id: "halal", name: "Halal", icon: images.find(i => i.name.includes("halal"))?.src },
-  { id: "byo", name: "BYO", icon: images.find(i => i.name.includes("byo"))?.src },
-  { id: "vegan", name: "Vegan", icon: images.find(i => i.name.includes("vegan"))?.src },
-  { id: "local", name: "Local", icon: images.find(i => i.name.includes("local"))?.src },
-];
+export default function MenuPage() {
+  const [restaurants, setRestaurants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [keyword, setKeyword] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
-function RestaurantSection({ restaurant }) {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const reload = () => setRefreshKey((k) => k + 1);
+  // ✅ 학식당 데이터 불러오기
+  const fetchRestaurants = async (searchValue = "") => {
+    try {
+      const params = {
+        query: "ON_CAMPUS",
+        page: 0,
+        size: 30,
+      };
+      if (searchValue) params.keyword = searchValue; // ✅ 검색어 추가
+
+      const { data } = await api.get("/restaurants", { params });
+      setRestaurants(data.result?.restaurants || []);
+    } catch (err) {
+      console.error("❌ 학식당 불러오기 실패:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ✅ 페이지 최초 로드 시 전체 목록 불러오기
+  useEffect(() => {
+    fetchRestaurants();
+  }, []);
+
+  // ✅ 검색 실행
+  const handleSearch = () => {
+    setLoading(true);
+    setSearchTerm(keyword);
+    fetchRestaurants(keyword);
+  };
+
+  // ✅ 엔터 키로도 검색 실행
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") handleSearch();
+  };
+
+  if (loading)
+    return (
+      <div className="flex items-center justify-center min-h-screen text-gray-600">
+        로딩 중...
+      </div>
+    );
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">{restaurant.name}</h2>
-      <ReviewForm restaurantId={restaurant.id} onCreated={reload} />
-      <div key={refreshKey}>
-        <ReviewList restaurantId={restaurant.id} />
+    <div className="bg-lime-50 min-h-screen py-12">
+      <div className="container mx-auto max-w-6xl px-4">
+        <h1 className="text-4xl font-bold text-gray-800 mb-10">학식당 전체</h1>
+
+        {/* ✅ 검색창 */}
+        <div className="flex mb-8">
+          <input
+            type="text"
+            value={keyword}
+            onChange={(e) => setKeyword(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder="식당 이름 또는 키워드를 입력하세요"
+            className="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-2 focus:ring-lime-300 focus:outline-none"
+          />
+          <button
+            onClick={handleSearch}
+            className="px-6 py-2 bg-lime-400 text-white font-semibold rounded-r-lg hover:bg-lime-500 transition-colors"
+          >
+            검색
+          </button>
+        </div>
+
+        {/* ✅ 검색결과 표시 */}
+        {searchTerm && (
+          <p className="text-gray-500 mb-6">
+            “{searchTerm}” 검색 결과 ({restaurants.length}개)
+          </p>
+        )}
+
+        {/* ✅ 결과 렌더링 */}
+        {restaurants.length === 0 ? (
+          <p className="text-gray-500 text-center mt-20">
+            해당 조건에 맞는 식당이 없습니다.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            {restaurants.map((restaurant) => (
+              <RestaurantCard
+                key={restaurant.restaurantId}
+                restaurant={restaurant}
+              />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-// ✅ 학내 식당만 남김
-const onCampusRestaurants = [
-  {
-    id: 'resto_1',
-    name: '오늘의 메뉴',
-    rating: 4.5,
-    reviewCount: 100,
-    icon: '한식',
-    imageUrl: 'https://placehold.co/184x184/F0E7D8/333?text=Food+1',
-    tags: ['local', 'vegan'],
-    menus: [
-      { name: '비빔밥', tags: ['vegan', 'local'] },
-      { name: '제육덮밥', tags: ['local'] }
-    ]
-  },
-  {
-    id: 'resto_2',
-    name: '비바쿡',
-    rating: 4.2,
-    reviewCount: 80,
-    icon: '양식',
-    imageUrl: 'https://placehold.co/184x184/D8F0E7/333?text=Food+2',
-    tags: ['gluten_free'],
-    menus: [
-      { name: '알리오 올리오', tags: ['gluten_free'] },
-      { name: '까르보나라', tags: [] }
-    ]
-  },
-  {
-    id: 'resto_3',
-    name: '포한끼',
-    rating: 4.0,
-    reviewCount: 50,
-    icon: '쌀국수',
-    imageUrl: 'https://placehold.co/184x184/E7D8F0/333?text=Food+3',
-    tags: ['local'],
-    menus: [
-      { name: '소고기 쌀국수', tags: ['local'] },
-      { name: '분짜', tags: [] }
-    ]
-  },
-];
-
-export const MenuPage = ({ setPage }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [activeFilters, setActiveFilters] = useState([]);
-
-  const handleFilterToggle = (filterId) => {
-    setActiveFilters((prev) =>
-      prev.includes(filterId)
-        ? prev.filter((id) => id !== filterId)
-        : [...prev, filterId]
-    );
-  };
-
-  const filteredRestaurants = onCampusRestaurants.filter((resto) => {
-    const searchTermLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      resto.name.toLowerCase().includes(searchTermLower) ||
-      resto.menus.some((menu) => menu.name.toLowerCase().includes(searchTermLower));
-
-    const matchesFilters =
-      activeFilters.length === 0 ||
-      activeFilters.every((filterId) => resto.tags.includes(filterId));
-
-    return matchesSearch && matchesFilters;
-  });
-
-  return (
-    <div className="bg-white py-12">
-      <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8">학식당</h1>
-
-        {/* 검색창 */}
-        <div className="relative mb-6">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="식당 또는 메뉴 검색..."
-            className="w-full pl-12 pr-4 py-4 text-lg border-2 border-gray-200 rounded-full focus:outline-none focus:border-lime-500 focus:ring-1 focus:ring-lime-500"
-          />
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </div>
-        </div>
-
-        {/* 필터 아이콘 */}
-        <div className="flex flex-wrap gap-2 mb-6">
-          {FILTERS.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => handleFilterToggle(f.id)}
-              className={`p-1 transition-all ${activeFilters.includes(f.id) ? "scale-110" : "opacity-70 hover:opacity-100"}`}
-            >
-              <img src={f.icon} alt={f.name} className="w-15 h-9 object-contain" />
-            </button>
-          ))}
-        </div>
-
-        {/* 식당 카드 */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-8">
-          {filteredRestaurants.length > 0 ? (
-            filteredRestaurants.map((resto) => (
-              <RestaurantCard key={resto.id} restaurant={resto} setPage={setPage} />
-            ))
-          ) : (
-            <p className="text-gray-600 md:col-span-3 text-center text-lg">검색 결과가 없습니다.</p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default MenuPage;

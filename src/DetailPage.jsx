@@ -4,24 +4,32 @@ import api from "./api/client";
 import { AuthContext } from "./AuthContext";
 
 export default function DetailPage() {
-  const { restaurantId } = useParams();
-  const { toggleFavorite, favorites } = useContext(AuthContext);
+  const { restaurantId: paramId } = useParams();
+  const { toggleFavorite, favorites, isLoggedIn } = useContext(AuthContext);
   const [isLiked, setIsLiked] = useState(false);
   const [reviews, setReviews] = useState([]);
-  const [page, setPage] = useState(0);
-  const [size, setSize] = useState(10);
+  const [page] = useState(0);
+  const [size] = useState(10);
 
-  // ✅ public 폴더에 있는 별 이미지 경로
-  const emptyStar = "/star_empty.png";   // 빈 별
-  const filledStar = "/star_filled.png"; // 찜한 별
+  // ✅ restaurantId 안전하게 처리
+  const restaurantId = paramId || null;
 
-  // ⭐ 초기 찜 상태 설정 (favorites 목록에 해당 식당이 포함되어 있으면 true)
+  const emptyStar = "/star_empty.png";
+  const filledStar = "/star_filled.png";
+
   useEffect(() => {
-    setIsLiked(favorites.includes(Number(restaurantId)));
+    if (restaurantId) {
+      setIsLiked(favorites.includes(Number(restaurantId)));
+    }
   }, [favorites, restaurantId]);
 
   // ✅ 리뷰 불러오기 함수
   const fetchReviews = async () => {
+    if (!restaurantId) {
+      console.warn("⚠️ restaurantId가 없습니다. 리뷰 요청 중단");
+      return;
+    }
+
     try {
       const { data } = await api.get("/reviews", {
         params: {
@@ -34,25 +42,29 @@ export default function DetailPage() {
       console.log("리뷰 응답:", data);
       setReviews(data.result?.reviews || []);
     } catch (err) {
-      console.error("리뷰 목록 불러오기 실패:", err);
+      if (err.response?.status === 401) {
+        console.warn("로그인 필요 - 리뷰를 보려면 로그인하세요.");
+      } else {
+        console.error("리뷰 목록 불러오기 실패:", err);
+      }
     }
   };
 
   // ✅ 페이지 진입 시 리뷰 자동 불러오기
   useEffect(() => {
-    fetchReviews();
-  }, [restaurantId]);
+    if (isLoggedIn) {
+      fetchReviews();
+    }
+  }, [restaurantId, isLoggedIn]);
 
-  // ✅ 찜 버튼 클릭 이벤트
+  // ✅ 찜 버튼 클릭
   const handleLikeClick = async () => {
-    // UI를 즉시 변경해서 새로고침 없이 별 모양 바꾸기
+    if (!restaurantId) return;
     setIsLiked((prev) => !prev);
-
     try {
-      await toggleFavorite(restaurantId);
+      await toggleFavorite(Number(restaurantId));
     } catch (error) {
       console.error("찜 토글 실패:", error);
-      // API 실패 시 UI 롤백
       setIsLiked((prev) => !prev);
     }
   };
@@ -74,8 +86,15 @@ export default function DetailPage() {
         onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
       />
 
+      {/* ✅ 로그인 안 한 경우 */}
+      {!isLoggedIn && (
+        <p style={{ marginTop: "20px", color: "#666" }}>
+          리뷰를 보거나 작성하려면 로그인하세요.
+        </p>
+      )}
+
       {/* ✅ 리뷰 섹션 */}
-      {reviews.length > 0 && (
+      {isLoggedIn && reviews.length > 0 && (
         <div style={{ marginTop: "20px" }}>
           <h3>리뷰 목록</h3>
           <ul>
@@ -84,6 +103,13 @@ export default function DetailPage() {
             ))}
           </ul>
         </div>
+      )}
+
+      {/* ✅ 리뷰 없음 */}
+      {isLoggedIn && reviews.length === 0 && (
+        <p style={{ marginTop: "20px", color: "#777" }}>
+          아직 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
+        </p>
       )}
     </div>
   );
