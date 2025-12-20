@@ -8,7 +8,14 @@ export default function MyReviews() {
   useEffect(() => {
     const fetchMyReviews = async () => {
       try {
-        const { data } = await api.get(REVIEWS_LIST);
+        // ✅ query 파라미터 필수 (백엔드 API 스펙)
+        const { data } = await api.get(REVIEWS_LIST, {
+          params: {
+            query: "all",  // 전체 리뷰 조회 (내 리뷰만 조회하려면 백엔드에 확인 필요)
+            page: 0,
+            size: 50,
+          }
+        });
         console.log("✅ 내 리뷰 응답:", data);
         setReviews(data?.result?.reviews || []);
       } catch (err) {

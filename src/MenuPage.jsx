@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RestaurantCard from './RestaurantCard.jsx';
 import ReviewList from './ReviewList';
 import ReviewForm from './ReviewForm';
@@ -73,6 +73,11 @@ const onCampusRestaurants = [
 export const MenuPage = ({ setPage }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
+
+  // ✅ 페이지 로드 시 스크롤 맨 위로
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const handleFilterToggle = (filterId) => {
     setActiveFilters((prev) =>

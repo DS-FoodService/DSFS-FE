@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "./api/client";
 import { images } from "./data/images";
+import { useAuth } from "./AuthContext.jsx";
 
 const KAKAO_APP_KEY = "8668be1b8e7bcc2a3ba8e26af8f107c6";
 
@@ -58,13 +59,13 @@ const KakaoMap = ({ restaurants, selectedRestaurant }) => {
       const pos = new window.kakao.maps.LatLng(resto.lat, resto.lng);
       const marker = new window.kakao.maps.Marker({ position: pos, map });
       window.kakao.maps.event.addListener(marker, "click", () => {
-        navigate(`/detail/${resto.id}`);
+        navigate(`/detail/${resto.restaurantId}`);
       });
       return marker;
     }).filter(Boolean);
 
     return () => markers.forEach((m) => m.setMap(null));
-  }, [map, restaurants]);
+  }, [map, restaurants, navigate]);
 
   // ✅ 중심 이동
   useEffect(() => {
@@ -96,6 +97,8 @@ export default function OffCampusPage() {
   const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [activeFilters, setActiveFilters] = useState([]);
+  const { favorites, toggleFavorite } = useAuth();
+  const navigate = useNavigate();
 
   // ✅ 아이콘 필터 정의
   const FILTERS = [
@@ -114,21 +117,28 @@ export default function OffCampusPage() {
     );
   };
 
+  // ✅ 페이지 로드 시 스크롤 맨 위로
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   // ✅ 데이터 로드
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const { data } = await api.get("/restaurant/offcampus");
-        if (data?.result?.length > 0) {
-          setRestaurants(data.result);
+        // 백엔드 스펙: GET /restaurants
+        const { data } = await api.get("/restaurants");
+        if (data?.result?.restaurants?.length > 0) {
+          // 학교 밖 식당만 필터링 (백엔드가 type 필드 추가하면 활용)
+          setRestaurants(data.result.restaurants);
         } else {
           throw new Error("응답 비어 있음");
         }
       } catch (err) {
         console.error("❌ 식당 데이터 로드 실패:", err);
         setRestaurants([
-          { id: 1, name: "양국", lat: 37.653, lng: 127.013, tags: ["local"] },
-          { id: 2, name: "밀콩제면소", lat: 37.652, lng: 127.012, tags: ["vegan"] },
+          { restaurantId: 1, name: "양국", lat: 37.653, lng: 127.013, tags: ["local"] },
+          { restaurantId: 2, name: "밀콩제면소", lat: 37.652, lng: 127.012, tags: ["vegan"] },
         ]);
       }
     };
@@ -140,6 +150,12 @@ export default function OffCampusPage() {
       activeFilters.length === 0 ||
       activeFilters.every((f) => r.tags?.includes(f))
   );
+
+  const handleFavoriteClick = (e, restaurantId) => {
+    e.stopPropagation();
+    const isFavorite = favorites.some(f => f.restaurantId === restaurantId);
+    toggleFavorite(restaurantId, isFavorite);
+  };
 
   return (
     <div className="flex flex-col md:flex-row h-[calc(100vh-64px)]">
@@ -153,11 +169,10 @@ export default function OffCampusPage() {
             <button
               key={f.id}
               onClick={() => handleFilterToggle(f.id)}
-              className={`p-1 transition-all ${
-                activeFilters.includes(f.id)
-                  ? "scale-110"
-                  : "opacity-70 hover:opacity-100"
-              }`}
+              className={`p-1 transition-all ${activeFilters.includes(f.id)
+                ? "scale-110"
+                : "opacity-70 hover:opacity-100"
+                }`}
             >
               <img src={f.icon} alt={f.name} className="w-16 h-16 object-contain" />
             </button>
@@ -165,19 +180,47 @@ export default function OffCampusPage() {
         </div>
 
         <ul className="space-y-4">
-          {filteredRestaurants.map((resto) => (
-            <li
-              key={resto.id}
-              onClick={() => setSelectedRestaurant(resto)}
-              className={`cursor-pointer border p-3 rounded-md ${
-                selectedRestaurant?.id === resto.id
+          {filteredRestaurants.map((resto) => {
+            const isFavorite = favorites.some(f => f.restaurantId === resto.restaurantId);
+            return (
+              <li
+                key={resto.restaurantId}
+                className={`border p-3 rounded-md flex justify-between items-center ${selectedRestaurant?.restaurantId === resto.restaurantId
                   ? "bg-lime-100 border-lime-500"
                   : "border-gray-200"
-              }`}
-            >
-              {resto.name}
-            </li>
-          ))}
+                  }`}
+              >
+                {/* 식당 이름 클릭 → 상세 페이지 이동 */}
+                <span
+                  onClick={() => navigate(`/detail/${resto.restaurantId}`)}
+                  className="cursor-pointer hover:text-lime-700 hover:underline font-medium"
+                >
+                  {resto.name}
+                </span>
+                <div className="flex items-center gap-2">
+                  {/* 지도 선택 버튼 */}
+                  <button
+                    onClick={() => setSelectedRestaurant(resto)}
+                    className="text-xs px-2 py-1 bg-gray-100 rounded hover:bg-gray-200"
+                  >
+                    📍 지도
+                  </button>
+                  {/* 찜 버튼 */}
+                  <button
+                    onClick={(e) => handleFavoriteClick(e, resto.restaurantId)}
+                    className="p-1 hover:scale-110 transition-transform"
+                    aria-label={isFavorite ? "찜 해제" : "찜하기"}
+                  >
+                    <img
+                      src={isFavorite ? "/assets/restaurants/heart-filled.png" : "/assets/restaurants/heart-empty.png"}
+                      alt={isFavorite ? "찜 해제" : "찜하기"}
+                      className="w-5 h-5"
+                    />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </div>
 

@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from "./AuthContext.jsx";
 import { images } from "./data/images";
 
-const SignUpPage = ({ setPage }) => {
+const SignUpPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { signup } = useAuth();
+  const navigate = useNavigate();
 
   const signupImg = images.find((img) => img.name === "log")?.src;
 
@@ -28,7 +30,8 @@ const SignUpPage = ({ setPage }) => {
     setLoading(true);
 
     try {
-      await signup(email, password); 
+      await signup(email, password);
+      navigate("/login"); // ✅ 회원가입 후 로그인 페이지로 이동
     } catch (err) {
       setError(err.message || "회원가입 중 오류 발생");
     } finally {
@@ -101,7 +104,7 @@ const SignUpPage = ({ setPage }) => {
           <div className="text-center mt-6">
             <p className="text-sm text-gray-600">
               Already have an account?
-              <button onClick={() => setPage("login")} className="font-medium text-lime-600 hover:text-lime-500 ml-1">
+              <button onClick={() => navigate("/login")} className="font-medium text-lime-600 hover:text-lime-500 ml-1">
                 Log in
               </button>
             </p>
@@ -114,3 +117,4 @@ const SignUpPage = ({ setPage }) => {
 };
 
 export default SignUpPage;
+

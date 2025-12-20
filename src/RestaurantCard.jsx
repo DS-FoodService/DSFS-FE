@@ -1,18 +1,18 @@
 import { useAuth } from "./AuthContext.jsx";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
 const RestaurantCard = ({ restaurant }) => {
   const { favorites, toggleFavorite } = useAuth();
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
 
   // 백엔드 응답 필드명에 맞춤
   const restaurantId = restaurant.restaurantId;
-  const isFavorite = favorites.includes(restaurantId);
+  const isFavorite = favorites.some(f => f.restaurantId === restaurantId);
 
   return (
     <div
       className="relative bg-white rounded-2xl shadow-md hover:shadow-xl p-5 cursor-pointer transition-transform hover:-translate-y-1"
-      onClick={() => navigate(`/detail/${restaurantId}`)} 
+      onClick={() => navigate(`/detail/${restaurantId}`)}
     >
       {/* 찜 버튼 (하트) */}
       <button

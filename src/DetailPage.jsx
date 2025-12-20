@@ -1,20 +1,118 @@
-import { useState, useEffect, useContext } from "react";
-import { useParams } from "react-router-dom";
+import { useState, useEffect, useContext, useRef } from "react";
+import { useParams, Link } from "react-router-dom";
 import api from "./api/client";
 import { AuthContext } from "./AuthContext";
+import ReviewForm from "./ReviewForm";
+import { images } from "./data/images";
+
+const KAKAO_APP_KEY = "8668be1b8e7bcc2a3ba8e26af8f107c6";
+
+// 아이콘 데이터
+const DIETARY_ICONS = [
+  { id: "gluten_free", name: "Gluten-Free", icon: "/assets/restaurants/gluten.png" },
+  { id: "halal", name: "Halal", icon: "/assets/restaurants/halal.png" },
+  { id: "byo", name: "BYO", icon: "/assets/restaurants/byo.png" },
+  { id: "vegan", name: "Vegan", icon: "/assets/restaurants/vegan.png" },
+  { id: "local", name: "Local", icon: "/assets/restaurants/local.png" },
+];
+
+// 카카오 지도 컴포넌트
+const RestaurantMap = ({ lat, lng, name }) => {
+  const mapRef = useRef(null);
+
+  useEffect(() => {
+    if (!lat || !lng) return;
+
+    const initMap = () => {
+      if (!window.kakao?.maps || !mapRef.current) return;
+
+      const position = new window.kakao.maps.LatLng(lat, lng);
+      const map = new window.kakao.maps.Map(mapRef.current, {
+        center: position,
+        level: 3,
+      });
+
+      // 마커 생성
+      const marker = new window.kakao.maps.Marker({
+        position: position,
+        map: map,
+      });
+
+      // 인포윈도우 생성
+      const infowindow = new window.kakao.maps.InfoWindow({
+        content: `<div style="padding:5px;font-size:12px;">${name || '식당'}</div>`,
+      });
+      infowindow.open(map, marker);
+    };
+
+    if (window.kakao?.maps) {
+      window.kakao.maps.load(initMap);
+    } else {
+      initMap();
+    }
+  }, [lat, lng, name]);
+
+  if (!lat || !lng) {
+    return (
+      <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
+        지도 정보가 없습니다
+      </div>
+    );
+  }
+
+  return <div ref={mapRef} className="w-full h-64 rounded-lg shadow-md" />;
+};
 
 export default function DetailPage() {
   const { restaurantId } = useParams();
   const { toggleFavorite, favorites } = useContext(AuthContext);
   const [isLiked, setIsLiked] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [restaurant, setRestaurant] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
 
   useEffect(() => {
-    // 즐겨찾기 여부 표시
-    setIsLiked(favorites.includes(Number(restaurantId)));
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    const isFav = favorites.some(f => f.restaurantId === Number(restaurantId));
+    setIsLiked(isFav);
   }, [favorites, restaurantId]);
+
+  // 식당 상세 정보 불러오기
+  useEffect(() => {
+    const fetchRestaurantDetail = async () => {
+      try {
+        const { data } = await api.get(`/restaurants/${restaurantId}`);
+        console.log("식당 상세 정보:", data);
+        setRestaurant(data.result || null);
+      } catch (err) {
+        console.error("식당 정보 불러오기 실패:", err);
+        // 임시 데이터 (백엔드 연결 전)
+        setRestaurant({
+          name: `식당 ${restaurantId}`,
+          address: "주소 정보 없음",
+          lat: 37.6514,
+          lng: 127.016,
+          tags: ["vegan", "local"],
+          menus: [
+            { name: "대표 메뉴 1", price: 7000 },
+            { name: "대표 메뉴 2", price: 8000 },
+          ],
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRestaurantDetail();
+  }, [restaurantId]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [restaurantId]);
 
   const fetchReviews = async () => {
     try {
@@ -26,7 +124,6 @@ export default function DetailPage() {
           size,
         },
       });
-      console.log("리뷰 응답:", data);
       setReviews(data.result?.reviews || []);
     } catch (err) {
       console.error("리뷰 목록 불러오기 실패:", err);
@@ -34,31 +131,142 @@ export default function DetailPage() {
   };
 
   const handleLikeClick = async () => {
-    setIsLiked(!isLiked);
-    await toggleFavorite(restaurantId);
-    if (!isLiked) {
-      await fetchReviews(); // ❤️ 찜하기 누를 때 리뷰 로드
-    } else {
-      setReviews([]); // 💔 해제 시 리뷰 비우기
-    }
+    await toggleFavorite(restaurantId, isLiked);
   };
 
-  return (
-    <div>
-      <button onClick={handleLikeClick}>
-        {isLiked ? "💔 찜 해제" : "❤️ 찜하기"}
-      </button>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-gray-500">로딩 중...</div>
+      </div>
+    );
+  }
 
-      {reviews.length > 0 && (
-        <section>
-          <h3>리뷰 목록</h3>
-          <ul>
-            {reviews.map((r) => (
-              <li key={r.reviewId}>{r.content}</li>
-            ))}
-          </ul>
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      {/* 헤더: 식당 이름 + 찜 버튼 */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-800">
+          {restaurant?.name || `식당 ${restaurantId}`}
+        </h1>
+        <div className="flex gap-3">
+          <button
+            onClick={handleLikeClick}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors border border-gray-300"
+          >
+            <img
+              src={isLiked ? "/assets/restaurants/heart-filled.png" : "/assets/restaurants/heart-empty.png"}
+              alt={isLiked ? "찜 해제" : "찜하기"}
+              className="w-6 h-6"
+            />
+            <span>{isLiked ? "찜 해제" : "찜하기"}</span>
+          </button>
+          <Link
+            to="/myreviews"
+            className="px-4 py-2 bg-lime-600 text-white rounded-lg hover:bg-lime-700 transition-colors"
+          >
+            내 리뷰 보기
+          </Link>
+        </div>
+      </div>
+
+      {/* 아이콘 섹션 */}
+      {restaurant?.tags && restaurant.tags.length > 0 && (
+        <section className="mb-8">
+          <h2 className="text-xl font-bold text-gray-800 mb-4">식당 특징</h2>
+          <div className="flex flex-wrap gap-4">
+            {restaurant.tags.map((tagId) => {
+              const icon = DIETARY_ICONS.find(i => i.id === tagId);
+              if (!icon) return null;
+              return (
+                <div key={tagId} className="flex flex-col items-center gap-2 p-3 bg-lime-50 rounded-lg">
+                  <img src={icon.icon} alt={icon.name} className="w-12 h-12 object-contain" />
+                  <span className="text-sm font-medium text-gray-700">{icon.name}</span>
+                </div>
+              );
+            })}
+          </div>
         </section>
       )}
+
+      {/* 메뉴 섹션 */}
+      <section className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">메뉴</h2>
+        {restaurant?.menus && restaurant.menus.length > 0 ? (
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <table className="w-full">
+              <thead className="bg-lime-100">
+                <tr>
+                  <th className="text-left px-6 py-3 text-gray-700 font-semibold">메뉴명</th>
+                  <th className="text-right px-6 py-3 text-gray-700 font-semibold">가격</th>
+                </tr>
+              </thead>
+              <tbody>
+                {restaurant.menus.map((menu, idx) => (
+                  <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
+                    <td className="px-6 py-4 text-gray-800">{menu.name}</td>
+                    <td className="px-6 py-4 text-gray-600 text-right">
+                      {menu.price ? `${menu.price.toLocaleString()}원` : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="bg-gray-100 rounded-lg p-6 text-center text-gray-500">
+            메뉴 정보가 없습니다. (백엔드 연동 후 표시됩니다)
+          </div>
+        )}
+      </section>
+
+      {/* 지도 섹션 */}
+      <section className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">위치</h2>
+        {restaurant?.address && (
+          <p className="text-gray-600 mb-3">📍 {restaurant.address}</p>
+        )}
+        <RestaurantMap
+          lat={restaurant?.lat}
+          lng={restaurant?.lng}
+          name={restaurant?.name}
+        />
+      </section>
+
+      {/* 리뷰 작성 폼 */}
+      <section className="mb-8">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">리뷰 작성</h2>
+        <ReviewForm restaurantId={restaurantId} onReviewAdded={fetchReviews} />
+      </section>
+
+      {/* 리뷰 목록 */}
+      <section>
+        <h3 className="text-xl font-bold text-gray-800 mb-4">
+          리뷰 ({reviews.length}개)
+        </h3>
+        {reviews.length > 0 ? (
+          <ul className="space-y-4">
+            {reviews.map((r) => (
+              <li key={r.reviewId} className="bg-white rounded-lg shadow-sm p-4 border border-gray-100">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-yellow-500">⭐</span>
+                  <span className="font-semibold">{r.score}</span>
+                  <span className="text-gray-400">|</span>
+                  <span className="text-sm text-gray-500">{r.author}</span>
+                </div>
+                <p className="text-gray-700">{r.content}</p>
+                <p className="text-xs text-gray-400 mt-2">
+                  {new Date(r.createdAt).toLocaleDateString()}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="bg-gray-100 rounded-lg p-6 text-center text-gray-500">
+            아직 리뷰가 없습니다. 첫 리뷰를 작성해보세요!
+          </div>
+        )}
+      </section>
     </div>
   );
 }

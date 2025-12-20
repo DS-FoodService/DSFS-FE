@@ -1,18 +1,27 @@
+import { useAuth } from "./AuthContext.jsx";
+
 const OffCampusRestaurantCard = ({ restaurant, setPage, onSelect, isSelected }) => {
   const { id, name, rating, reviewCount, tags, menus } = restaurant;
+  const { favorites, toggleFavorite } = useAuth();
+  const isFavorite = favorites.some(f => f.restaurantId === id);
 
   const handleCardClick = () => {
     onSelect(restaurant);
   };
-  
+
   const handleReviewClick = (e) => {
-     e.stopPropagation();
-     alert(`${name} 리뷰 보기 (구현 필요)`);
+    e.stopPropagation();
+    alert(`${name} 리뷰 보기 (구현 필요)`);
   };
-  
+
   const handleDetailsClick = (e) => {
-      e.stopPropagation();
-      alert(`${name} 상세 메뉴 보기 (구현 필요)`);
+    e.stopPropagation();
+    alert(`${name} 상세 메뉴 보기 (구현 필요)`);
+  };
+
+  const handleFavoriteClick = (e) => {
+    e.stopPropagation();
+    toggleFavorite(id, isFavorite);
   };
 
   const tagIcons = {
@@ -34,10 +43,25 @@ const OffCampusRestaurantCard = ({ restaurant, setPage, onSelect, isSelected }) 
         <div>
           <h3 className="text-xl font-bold text-gray-800">{name}</h3>
           <button onClick={handleReviewClick} className="mt-1" aria-label={`${name} 리뷰 보기`}>
-            <StarRating rating={rating} reviewCount={reviewCount} />
+            <div className="flex items-center gap-1">
+              <span>⭐ {rating ?? 0}</span>
+              <span className="text-gray-600">({reviewCount ?? 0})</span>
+            </div>
           </button>
         </div>
-        <FavoriteButton restaurantId={id} />
+
+        {/* Favorite Button with Heart Images */}
+        <button
+          onClick={handleFavoriteClick}
+          className="p-1 hover:scale-110 transition-transform"
+          aria-label={isFavorite ? "찜 해제" : "찜하기"}
+        >
+          <img
+            src={isFavorite ? "/assets/restaurants/heart-filled.png" : "/assets/restaurants/heart-empty.png"}
+            alt={isFavorite ? "찜 해제" : "찜하기"}
+            className="w-6 h-6"
+          />
+        </button>
       </div>
       <div className="flex justify-between items-center mb-4">
         <div className="flex gap-2">
