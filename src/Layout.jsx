@@ -13,7 +13,7 @@ export const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* 로고 */}
           <div className="flex items-center space-x-2 cursor-pointer flex-shrink-0" onClick={() => navigate("/")}>
-            <img src="/assets/restaurants/밥상로고.png" className="w-10 h-10 sm:w-14 sm:h-14 object-contain" />
+            <img src="/assets/restaurants/밥상로고.png" className="w-10 h-10 sm:w-14 sm:h-14 object-contain" style={{ mixBlendMode: 'multiply' }} />
             <span className="text-xl sm:text-2xl font-bold text-lime-800">Babsang</span>
           </div>
 

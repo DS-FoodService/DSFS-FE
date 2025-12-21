@@ -86,23 +86,52 @@ export default function DetailPage() {
   useEffect(() => {
     const fetchRestaurantDetail = async () => {
       try {
+        // 먼저 상세 API 시도
         const { data } = await api.get(`/restaurants/${restaurantId}`);
         console.log("식당 상세 정보:", data);
         setRestaurant(data.result || null);
       } catch (err) {
-        console.error("식당 정보 불러오기 실패:", err);
-        // 임시 데이터 (백엔드 연결 전)
-        setRestaurant({
-          name: `식당 ${restaurantId}`,
-          address: "주소 정보 없음",
-          lat: 37.6514,
-          lng: 127.016,
-          tags: ["vegan", "local"],
-          menus: [
-            { name: "대표 메뉴 1", price: 7000 },
-            { name: "대표 메뉴 2", price: 8000 },
-          ],
-        });
+        console.error("식당 상세 정보 실패, 목록에서 검색:", err);
+
+        // 실패 시 전체 목록에서 찾기
+        try {
+          const { data: listData } = await api.get("/restaurants");
+          const allRestaurants = listData.result?.restaurants || [];
+          const found = allRestaurants.find(r => r.restaurantId === Number(restaurantId));
+
+          if (found) {
+            setRestaurant({
+              name: found.name,
+              address: found.address || "주소 정보 없음",
+              lat: found.lat || 37.6514,
+              lng: found.lng || 127.016,
+              tags: found.tags || [],
+              menus: found.menus || [],
+              score: found.score,
+              reviewCount: found.reviewCount,
+            });
+          } else {
+            // 둘 다 실패하면 임시 데이터
+            setRestaurant({
+              name: `식당 ${restaurantId}`,
+              address: "주소 정보 없음",
+              lat: 37.6514,
+              lng: 127.016,
+              tags: ["vegan", "local"],
+              menus: [],
+            });
+          }
+        } catch (listErr) {
+          console.error("목록에서도 검색 실패:", listErr);
+          setRestaurant({
+            name: `식당 ${restaurantId}`,
+            address: "주소 정보 없음",
+            lat: 37.6514,
+            lng: 127.016,
+            tags: [],
+            menus: [],
+          });
+        }
       } finally {
         setLoading(false);
       }
