@@ -1,8 +1,6 @@
 // AuthContext.jsx
 import { createContext, useContext, useState, useEffect } from "react";
 import api from "./api/client";
-import axios from "axios";
-import { API_BASE_URL } from "./config.js";
 
 export const AuthContext = createContext(null);
 
@@ -13,7 +11,8 @@ export const AuthProvider = ({ children }) => {
   /* 로그인 */
   const login = async (email, password, navigate) => {
     try {
-      const res = await axios.post(`${API_BASE_URL}/auth/login`, {
+      // api 클라이언트 사용 (프록시를 통해 요청)
+      const res = await api.post("/auth/login", {
         email,
         password,
       });
@@ -41,7 +40,7 @@ export const AuthProvider = ({ children }) => {
   /* 회원가입 */
   const signup = async (email, password) => {
     try {
-      await axios.post(`${API_BASE_URL}/auth/register`, {
+      await api.post("/auth/register", {
         email,
         password,
       });
@@ -58,19 +57,24 @@ export const AuthProvider = ({ children }) => {
     if (!token) return;
 
     try {
-      const { data } = await api.get("/bookmark", {
+      const { data } = await api.get("/api/bookmark", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // ✅ bookmarkId도 함께 저장 (삭제 시 필요)
-      if (data?.result?.length) {
-        setFavorites(data.result.map((b) => ({
+      console.log("📌 찜 목록 응답:", data);
+
+      // ✅ 찜 데이터는 result.restaurants 배열에 있음
+      const bookmarks = data?.result?.restaurants || [];
+      if (bookmarks.length) {
+        setFavorites(bookmarks.map((b) => ({
           restaurantId: b.restaurantId,
           bookmarkId: b.bookmarkId || b.id
         })));
+      } else {
+        setFavorites([]);
       }
     } catch (err) {
-      console.warn("⚠️ 찜 목록 불러오기 실패 (무시 가능):", err);
+      console.warn("⚠️ 찜 목록 불러오기 실패:", err);
     }
   };
 
@@ -84,7 +88,7 @@ export const AuthProvider = ({ children }) => {
         // ✅ 찜 삭제: DELETE /api/bookmark/{bookmarkId}
         const bookmark = favorites.find(f => f.restaurantId === restaurantId);
         if (bookmark?.bookmarkId) {
-          await api.delete(`/bookmark/${bookmark.bookmarkId}`, {
+          await api.delete(`/api/bookmark/${bookmark.bookmarkId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
         }
@@ -92,7 +96,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         // ✅ 찜 등록: POST /api/bookmark with body
         const { data } = await api.post(
-          "/bookmark",
+          "/api/bookmark",
           { restaurantId: Number(restaurantId) },
           { headers: { Authorization: `Bearer ${token}` } }
         );

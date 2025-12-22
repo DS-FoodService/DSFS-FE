@@ -24,31 +24,47 @@ const RestaurantMap = ({ lat, lng, name }) => {
     if (!lat || !lng) return;
 
     const initMap = () => {
-      if (!window.kakao?.maps || !mapRef.current) return;
+      if (!mapRef.current) return;
 
-      const position = new window.kakao.maps.LatLng(lat, lng);
-      const map = new window.kakao.maps.Map(mapRef.current, {
+      const kakao = window.kakao;
+      if (!kakao?.maps?.LatLng) {
+        console.warn("카카오맵 SDK가 아직 로드되지 않았습니다");
+        return;
+      }
+
+      const position = new kakao.maps.LatLng(lat, lng);
+      const map = new kakao.maps.Map(mapRef.current, {
         center: position,
         level: 3,
       });
 
       // 마커 생성
-      const marker = new window.kakao.maps.Marker({
+      const marker = new kakao.maps.Marker({
         position: position,
         map: map,
       });
 
       // 인포윈도우 생성
-      const infowindow = new window.kakao.maps.InfoWindow({
+      const infowindow = new kakao.maps.InfoWindow({
         content: `<div style="padding:5px;font-size:12px;">${name || '식당'}</div>`,
       });
       infowindow.open(map, marker);
     };
 
-    if (window.kakao?.maps) {
+    // 카카오맵 SDK가 로드될 때까지 대기
+    if (window.kakao?.maps?.load) {
       window.kakao.maps.load(initMap);
-    } else {
+    } else if (window.kakao?.maps?.LatLng) {
+      // 이미 로드된 경우
       initMap();
+    } else {
+      // SDK가 아직 없으면 잠시 후 재시도
+      const timer = setTimeout(() => {
+        if (window.kakao?.maps?.load) {
+          window.kakao.maps.load(initMap);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, [lat, lng, name]);
 
@@ -60,7 +76,7 @@ const RestaurantMap = ({ lat, lng, name }) => {
     );
   }
 
-  return <div ref={mapRef} className="w-full h-64 rounded-lg shadow-md" />;
+  return <div ref={mapRef} className="w-full h-64 rounded-lg shadow-md" />
 };
 
 export default function DetailPage() {
@@ -89,7 +105,19 @@ export default function DetailPage() {
         // 먼저 상세 API 시도
         const { data } = await api.get(`/restaurants/${restaurantId}`);
         console.log("식당 상세 정보:", data);
-        setRestaurant(data.result || null);
+        const r = data.result?.restaurant || data.result;
+        const menus = data.result?.menus || r?.menus || [];
+        if (r) {
+          setRestaurant({
+            ...r,
+            lat: r.latitude || r.lat,
+            lng: r.longitude || r.lng,
+            tags: r.tags || r.icons || [],
+            menus: menus,
+          });
+        } else {
+          throw new Error("No restaurant data");
+        }
       } catch (err) {
         console.error("식당 상세 정보 실패, 목록에서 검색:", err);
 
@@ -103,9 +131,9 @@ export default function DetailPage() {
             setRestaurant({
               name: found.name,
               address: found.address || "주소 정보 없음",
-              lat: found.lat || 37.6514,
-              lng: found.lng || 127.016,
-              tags: found.tags || [],
+              lat: found.latitude || found.lat || 37.6514,
+              lng: found.longitude || found.lng || 127.016,
+              tags: found.tags || found.icons || [],
               menus: found.menus || [],
               score: found.score,
               reviewCount: found.reviewCount,
@@ -161,6 +189,7 @@ export default function DetailPage() {
 
   const handleLikeClick = async () => {
     await toggleFavorite(restaurantId, isLiked);
+    setIsLiked(!isLiked); // ✅ 로컬 상태도 업데이트
   };
 
   if (loading) {
