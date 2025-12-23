@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
   /* 회원가입 */
   const signup = async (email, password) => {
     try {
-      await api.post("/auth/register", {
+      await api.post("/auth/signup", {
         email,
         password,
       });
@@ -65,11 +65,16 @@ export const AuthProvider = ({ children }) => {
 
       // ✅ 찜 데이터는 result.restaurants 배열에 있음
       const bookmarks = data?.result?.restaurants || [];
+      console.log("📌 북마크 배열 (첫번째 아이템):", bookmarks[0]); // 구조 확인용
+
       if (bookmarks.length) {
-        setFavorites(bookmarks.map((b) => ({
+        const mappedFavorites = bookmarks.map((b) => ({
           restaurantId: b.restaurantId,
-          bookmarkId: b.bookmarkId || b.id
-        })));
+          // 여러 가능한 필드명 시도
+          bookmarkId: b.bookmarkId || b.bookmark_id || b.id || b.bookMarkedId
+        }));
+        console.log("📌 매핑된 favorites:", mappedFavorites);
+        setFavorites(mappedFavorites);
       } else {
         setFavorites([]);
       }
@@ -83,16 +88,23 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     if (!token) return alert("로그인 후 이용해주세요.");
 
+    console.log("🔄 찜 토글:", { restaurantId, isCurrentlyFavorite, favorites });
+
     try {
       if (isCurrentlyFavorite) {
         // ✅ 찜 삭제: DELETE /api/bookmark/{bookmarkId}
-        const bookmark = favorites.find(f => f.restaurantId === restaurantId);
+        const bookmark = favorites.find(f => f.restaurantId === Number(restaurantId));
+        console.log("🗑️ 삭제할 북마크:", bookmark);
+
         if (bookmark?.bookmarkId) {
-          await api.delete(`/api/bookmark/${bookmark.bookmarkId}`, {
+          const deleteRes = await api.delete(`/api/bookmark/${bookmark.bookmarkId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
+          console.log("🗑️ 삭제 응답:", deleteRes.data);
+        } else {
+          console.warn("⚠️ bookmarkId가 없어서 삭제 불가!");
         }
-        setFavorites((prev) => prev.filter((f) => f.restaurantId !== restaurantId));
+        setFavorites((prev) => prev.filter((f) => f.restaurantId !== Number(restaurantId)));
       } else {
         // ✅ 찜 등록: POST /api/bookmark with body
         const { data } = await api.post(
@@ -100,6 +112,7 @@ export const AuthProvider = ({ children }) => {
           { restaurantId: Number(restaurantId) },
           { headers: { Authorization: `Bearer ${token}` } }
         );
+        console.log("✅ 찜 등록 응답:", data);
         setFavorites((prev) => [...prev, {
           restaurantId: Number(restaurantId),
           bookmarkId: data?.result?.bookmarkId || data?.result?.id

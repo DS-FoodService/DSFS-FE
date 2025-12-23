@@ -107,12 +107,13 @@ export default function DetailPage() {
         console.log("식당 상세 정보:", data);
         const r = data.result?.restaurant || data.result;
         const menus = data.result?.menus || r?.menus || [];
+        console.log("🏷️ 아이콘 필드:", { tags: r?.tags, icons: r?.icons });
         if (r) {
           setRestaurant({
             ...r,
             lat: r.latitude || r.lat,
             lng: r.longitude || r.lng,
-            tags: r.tags || r.icons || [],
+            tags: r.icons || r.tags || [],  // icons 먼저 체크
             menus: menus,
           });
         } else {

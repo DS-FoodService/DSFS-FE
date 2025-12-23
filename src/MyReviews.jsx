@@ -36,7 +36,15 @@ export default function MyReviews() {
         // ✅ 내 이메일로 작성한 리뷰만 필터링
         const allReviews = data?.result?.reviews || [];
         const myEmail = user?.email || localStorage.getItem("userEmail");
-        const myReviews = allReviews.filter(r => r.author === myEmail);
+        console.log("📧 내 이메일:", myEmail);
+        console.log("📝 리뷰 작성자들:", allReviews.map(r => ({ author: r.author, email: r.email, userId: r.userId, writerEmail: r.writerEmail })));
+
+        // 여러 필드명으로 필터링 시도
+        const myReviews = allReviews.filter(r =>
+          r.author === myEmail ||
+          r.email === myEmail ||
+          r.writerEmail === myEmail
+        );
 
         setReviews(myReviews);
       } catch (err) {
