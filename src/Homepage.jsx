@@ -6,7 +6,8 @@ import RestaurantCard from "./RestaurantCard.jsx";
 import { images } from "./data/images";
 
 const HomePage = () => {
-  const [restaurants, setRestaurants] = useState([]);
+  const [onCampusRestaurants, setOnCampusRestaurants] = useState([]);
+  const [offCampusRestaurants, setOffCampusRestaurants] = useState([]);
   const navigate = useNavigate();
 
   const onCampusRef = useRef(null);
@@ -23,14 +24,20 @@ const HomePage = () => {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const { data } = await api.get(RESTAURANT_LIST, {
-          params: { page: 0, size: 22 }  // 모든 식당 불러오기
+        // 학식당 (ON_CAMPUS)
+        const onCampusRes = await api.get(RESTAURANT_LIST, {
+          params: { query: "ON_CAMPUS", page: 0, size: 10 }
         });
+        console.log("🏫 학식당 API 응답:", onCampusRes.data);
+        setOnCampusRestaurants(onCampusRes.data.result?.restaurants || []);
 
-        console.log("식당 목록 API 응답:", data);
+        // 학교 밖 식당 (OFF_CAMPUS)
+        const offCampusRes = await api.get(RESTAURANT_LIST, {
+          params: { query: "OFF_CAMPUS", page: 0, size: 22 }
+        });
+        console.log("🍽️ 학교 밖 식당 API 응답:", offCampusRes.data);
+        setOffCampusRestaurants(offCampusRes.data.result?.restaurants || []);
 
-        const fetched = data.result?.restaurants || [];
-        setRestaurants(fetched);
       } catch (error) {
         console.error(
           "❌ 식당 목록을 불러오는 중 오류 발생:",
@@ -42,18 +49,6 @@ const HomePage = () => {
 
     fetchRestaurants();
   }, []);
-
-  // 학식당 이름 목록
-  const ON_CAMPUS_NAMES = ["오늘의 메뉴", "비바쿡", "포한끼", "오늘의메뉴"];
-
-  // 학식당 / 학교 밖 식당 분리 (API 데이터에서 필터링)
-  const onCampusRestaurants = restaurants
-    .filter((r) => ON_CAMPUS_NAMES.includes(r.name))
-    .slice(0, 3);
-
-  const offCampusRestaurants = restaurants
-    .filter((r) => !ON_CAMPUS_NAMES.includes(r.name))
-    .slice(0, 3);
 
   return (
     <div>
