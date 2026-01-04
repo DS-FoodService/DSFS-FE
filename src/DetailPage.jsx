@@ -20,9 +20,13 @@ const DIETARY_ICONS = [
 const RestaurantMap = ({ lat, lng, name }) => {
   const mapRef = useRef(null);
 
-  useEffect(() => {
-    if (!lat || !lng) return;
+  // 덕성여대 기본 좌표
+  const DEFAULT_LAT = 37.6514;
+  const DEFAULT_LNG = 127.016;
+  const displayLat = lat || DEFAULT_LAT;
+  const displayLng = lng || DEFAULT_LNG;
 
+  useEffect(() => {
     const initMap = () => {
       if (!mapRef.current) return;
 
@@ -32,7 +36,7 @@ const RestaurantMap = ({ lat, lng, name }) => {
         return;
       }
 
-      const position = new kakao.maps.LatLng(lat, lng);
+      const position = new kakao.maps.LatLng(displayLat, displayLng);
       const map = new kakao.maps.Map(mapRef.current, {
         center: position,
         level: 3,
@@ -66,15 +70,7 @@ const RestaurantMap = ({ lat, lng, name }) => {
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [lat, lng, name]);
-
-  if (!lat || !lng) {
-    return (
-      <div className="w-full h-64 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">
-        지도 정보가 없습니다
-      </div>
-    );
-  }
+  }, [displayLat, displayLng, name]);
 
   return <div ref={mapRef} className="w-full h-64 rounded-lg shadow-md" />
 };
@@ -111,10 +107,14 @@ export default function DetailPage() {
         const menuIcons = [...new Set(menus.flatMap(m => m.icons || []))];
         console.log("🏷️ 아이콘 필드:", { tags: r?.tags, icons: r?.icons, menuIcons });
         if (r) {
+          // 덕성여자대학교 기본 좌표
+          const DEFAULT_LAT = 37.6514;
+          const DEFAULT_LNG = 127.016;
+
           setRestaurant({
             ...r,
-            lat: r.latitude || r.lat,
-            lng: r.longitude || r.lng,
+            lat: r.latitude || r.lat || DEFAULT_LAT,
+            lng: r.longitude || r.lng || DEFAULT_LNG,
             tags: r.icons || r.tags || menuIcons,  // restaurant icons -> tags -> menu icons 순으로 체크
             menus: menus,
           });

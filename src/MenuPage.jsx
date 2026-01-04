@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import RestaurantCard from './RestaurantCard.jsx';
-import ReviewList from './ReviewList';
-import ReviewForm from './ReviewForm';
+import api from "./api/client";
 import { images } from "./data/images";
 
 const FILTERS = [
@@ -12,71 +11,30 @@ const FILTERS = [
   { id: "local", name: "Local", icon: images.find(i => i.name.includes("local"))?.src },
 ];
 
-function RestaurantSection({ restaurant }) {
-  const [refreshKey, setRefreshKey] = useState(0);
-  const reload = () => setRefreshKey((k) => k + 1);
-
-  return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold">{restaurant.name}</h2>
-      <ReviewForm restaurantId={restaurant.id} onCreated={reload} />
-      <div key={refreshKey}>
-        <ReviewList restaurantId={restaurant.id} />
-      </div>
-    </div>
-  );
-}
-
-// ✅ 학내 식당만 남김
-const onCampusRestaurants = [
-  {
-    id: 'resto_1',
-    name: '오늘의 메뉴',
-    rating: 4.5,
-    reviewCount: 100,
-    icon: '한식',
-    imageUrl: 'https://placehold.co/184x184/F0E7D8/333?text=Food+1',
-    tags: ['local', 'vegan'],
-    menus: [
-      { name: '비빔밥', tags: ['vegan', 'local'] },
-      { name: '제육덮밥', tags: ['local'] }
-    ]
-  },
-  {
-    id: 'resto_2',
-    name: '비바쿡',
-    rating: 4.2,
-    reviewCount: 80,
-    icon: '양식',
-    imageUrl: 'https://placehold.co/184x184/D8F0E7/333?text=Food+2',
-    tags: ['gluten_free'],
-    menus: [
-      { name: '알리오 올리오', tags: ['gluten_free'] },
-      { name: '까르보나라', tags: [] }
-    ]
-  },
-  {
-    id: 'resto_3',
-    name: '포한끼',
-    rating: 4.0,
-    reviewCount: 50,
-    icon: '쌀국수',
-    imageUrl: 'https://placehold.co/184x184/E7D8F0/333?text=Food+3',
-    tags: ['local'],
-    menus: [
-      { name: '소고기 쌀국수', tags: ['local'] },
-      { name: '분짜', tags: [] }
-    ]
-  },
-];
-
 export const MenuPage = ({ setPage }) => {
+  const [restaurants, setRestaurants] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState([]);
 
-  // ✅ 페이지 로드 시 스크롤 맨 위로
+  // 페이지 로드 시 스크롤 맨 위로
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  // 학식당 API 호출
+  useEffect(() => {
+    const fetchOnCampusRestaurants = async () => {
+      try {
+        const { data } = await api.get("/restaurants", {
+          params: { query: "ON_CAMPUS", page: 0, size: 20 }
+        });
+        console.log("🏫 학식당 목록:", data);
+        setRestaurants(data.result?.restaurants || []);
+      } catch (error) {
+        console.error("❌ 학식당 목록 불러오기 실패:", error);
+      }
+    };
+    fetchOnCampusRestaurants();
   }, []);
 
   const handleFilterToggle = (filterId) => {
@@ -87,15 +45,13 @@ export const MenuPage = ({ setPage }) => {
     );
   };
 
-  const filteredRestaurants = onCampusRestaurants.filter((resto) => {
+  const filteredRestaurants = restaurants.filter((resto) => {
     const searchTermLower = searchTerm.toLowerCase();
-    const matchesSearch =
-      resto.name.toLowerCase().includes(searchTermLower) ||
-      resto.menus.some((menu) => menu.name.toLowerCase().includes(searchTermLower));
+    const matchesSearch = resto.name.toLowerCase().includes(searchTermLower);
 
     const matchesFilters =
       activeFilters.length === 0 ||
-      activeFilters.every((filterId) => resto.tags.includes(filterId));
+      activeFilters.every((filterId) => resto.tags?.includes(filterId));
 
     return matchesSearch && matchesFilters;
   });
@@ -138,7 +94,7 @@ export const MenuPage = ({ setPage }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 pt-8">
           {filteredRestaurants.length > 0 ? (
             filteredRestaurants.map((resto) => (
-              <RestaurantCard key={resto.id} restaurant={resto} setPage={setPage} />
+              <RestaurantCard key={resto.restaurantId} restaurant={resto} setPage={setPage} />
             ))
           ) : (
             <p className="text-gray-600 md:col-span-3 text-center text-lg">검색 결과가 없습니다.</p>
