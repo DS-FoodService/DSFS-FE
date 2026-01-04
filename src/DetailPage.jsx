@@ -16,52 +16,6 @@ const DIETARY_ICONS = [
   { id: "local", name: "Local", icon: "/assets/restaurants/local.png" },
 ];
 
-// 학식당 데이터 (하드코딩)
-const ON_CAMPUS_RESTAURANTS = {
-  'campus_1': {
-    name: '오늘의 메뉴',
-    address: '덕성여자대학교 학생회관 1층',
-    lat: 37.6514,
-    lng: 127.016,
-    score: null,  // 실제 리뷰 없으므로 표시 안함
-    reviewCount: 0,
-    tags: ['local', 'vegan'],
-    menus: [
-      { name: '비빔밥', price: 4500 },
-      { name: '제육덮밥', price: 5000 },
-      { name: '김치찌개', price: 4500 },
-    ],
-  },
-  'campus_2': {
-    name: '비바쿡',
-    address: '덕성여자대학교 학생회관 2층',
-    lat: 37.6514,
-    lng: 127.016,
-    score: null,
-    reviewCount: 0,
-    tags: ['gluten_free'],
-    menus: [
-      { name: '알리오 올리오', price: 5500 },
-      { name: '까르보나라', price: 6000 },
-      { name: '토마토 파스타', price: 5500 },
-    ],
-  },
-  'campus_3': {
-    name: '포한끼',
-    address: '덕성여자대학교 학생회관 지하 1층',
-    lat: 37.6514,
-    lng: 127.016,
-    score: null,
-    reviewCount: 0,
-    tags: ['local'],
-    menus: [
-      { name: '소고기 쌀국수', price: 7000 },
-      { name: '분짜', price: 7500 },
-      { name: '반미 샌드위치', price: 5000 },
-    ],
-  },
-};
-
 // 카카오 지도 컴포넌트
 const RestaurantMap = ({ lat, lng, name }) => {
   const mapRef = useRef(null);
@@ -147,18 +101,8 @@ export default function DetailPage() {
   // 식당 상세 정보 불러오기
   useEffect(() => {
     const fetchRestaurantDetail = async () => {
-      // 학식당인 경우 하드코딩 데이터 사용
-      if (restaurantId.startsWith('campus_')) {
-        const campusData = ON_CAMPUS_RESTAURANTS[restaurantId];
-        if (campusData) {
-          setRestaurant(campusData);
-          setLoading(false);
-          return;
-        }
-      }
-
       try {
-        // 먼저 상세 API 시도
+        // API에서 상세 정보 불러오기
         const { data } = await api.get(`/restaurants/${restaurantId}`);
         console.log("식당 상세 정보:", data);
         const r = data.result?.restaurant || data.result;

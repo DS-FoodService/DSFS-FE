@@ -15,7 +15,12 @@ const KakaoMap = ({ restaurants, selectedRestaurant }) => {
   // ✅ 지도 초기화
   useEffect(() => {
     const initMap = () => {
-      if (!window.kakao?.maps || !mapRef.current) return;
+      // SDK가 완전히 로드되었는지 확인
+      if (!window.kakao?.maps?.LatLng || !mapRef.current) {
+        console.warn("카카오맵 SDK 아직 로드 안됨");
+        return;
+      }
+
       const kakaoMap = new window.kakao.maps.Map(mapRef.current, {
         center: new window.kakao.maps.LatLng(37.6514, 127.016),
         level: 4,
@@ -39,14 +44,20 @@ const KakaoMap = ({ restaurants, selectedRestaurant }) => {
       }
     };
 
-    if (window.kakao && window.kakao.maps) {
+    // kakao.maps.load() 사용하여 안전하게 초기화
+    if (window.kakao?.maps?.load) {
+      window.kakao.maps.load(initMap);
+    } else if (window.kakao?.maps?.LatLng) {
+      // 이미 완전히 로드된 경우
       initMap();
     } else {
-      const script = document.createElement("script");
-      script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
-      script.async = true;
-      script.onload = () => window.kakao.maps.load(initMap);
-      document.head.appendChild(script);
+      // SDK가 아직 없으면 잠시 후 재시도
+      const timer = setTimeout(() => {
+        if (window.kakao?.maps?.load) {
+          window.kakao.maps.load(initMap);
+        }
+      }, 500);
+      return () => clearTimeout(timer);
     }
   }, []);
 

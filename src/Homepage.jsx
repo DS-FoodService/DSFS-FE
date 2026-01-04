@@ -43,33 +43,17 @@ const HomePage = () => {
     fetchRestaurants();
   }, []);
 
-  // 학식당 데이터 (하드코딩)
-  const onCampusRestaurants = [
-    {
-      restaurantId: 'campus_1',
-      name: '오늘의 메뉴',
-      score: null,  // 실제 리뷰 없으므로 표시 안함
-      reviewCount: 0,
-      imageUrl: 'https://placehold.co/300x200/F0E7D8/333?text=오늘의+메뉴',
-    },
-    {
-      restaurantId: 'campus_2',
-      name: '비바쿡',
-      score: null,
-      reviewCount: 0,
-      imageUrl: 'https://placehold.co/300x200/D8F0E7/333?text=비바쿡',
-    },
-    {
-      restaurantId: 'campus_3',
-      name: '포한끼',
-      score: null,
-      reviewCount: 0,
-      imageUrl: 'https://placehold.co/300x200/E7D8F0/333?text=포한끼',
-    },
-  ];
+  // 학식당 이름 목록
+  const ON_CAMPUS_NAMES = ["오늘의 메뉴", "비바쿡", "포한끼", "오늘의메뉴"];
 
-  // 학교 밖 식당 (API에서 가져온 데이터)
-  const offCampusRestaurants = restaurants.slice(0, 3);
+  // 학식당 / 학교 밖 식당 분리 (API 데이터에서 필터링)
+  const onCampusRestaurants = restaurants
+    .filter((r) => ON_CAMPUS_NAMES.includes(r.name))
+    .slice(0, 3);
+
+  const offCampusRestaurants = restaurants
+    .filter((r) => !ON_CAMPUS_NAMES.includes(r.name))
+    .slice(0, 3);
 
   return (
     <div>
