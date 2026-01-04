@@ -127,7 +127,9 @@ export default function OffCampusPage() {
     const fetchRestaurants = async () => {
       try {
         // 백엔드 스펙: GET /restaurants
-        const { data } = await api.get("/restaurants");
+        const { data } = await api.get("/restaurants", {
+          params: { page: 0, size: 22 }  // 모든 식당 불러오기
+        });
         if (data?.result?.restaurants?.length > 0) {
           // 학교 밖 식당만 필터링 (백엔드가 type 필드 추가하면 활용)
           setRestaurants(data.result.restaurants);

@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
     if (!token) return;
 
     try {
-      const { data } = await api.get("/bookmark", {
+      const { data } = await api.get("/api/bookmark", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -97,7 +97,7 @@ export const AuthProvider = ({ children }) => {
         console.log("🗑️ 삭제할 북마크:", bookmark);
 
         if (bookmark?.bookmarkId) {
-          const deleteRes = await api.delete(`/bookmark/${bookmark.bookmarkId}`, {
+          const deleteRes = await api.delete(`/api/bookmark/${bookmark.bookmarkId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           console.log("🗑️ 삭제 응답:", deleteRes.data);
@@ -108,7 +108,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         // ✅ 찜 등록: POST /api/bookmark with body
         const { data } = await api.post(
-          "/bookmark",
+          "/api/bookmark",
           { restaurantId: Number(restaurantId) },
           { headers: { Authorization: `Bearer ${token}` } }
         );

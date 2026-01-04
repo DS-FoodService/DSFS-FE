@@ -23,7 +23,9 @@ const HomePage = () => {
   useEffect(() => {
     const fetchRestaurants = async () => {
       try {
-        const { data } = await api.get(RESTAURANT_LIST);
+        const { data } = await api.get(RESTAURANT_LIST, {
+          params: { page: 0, size: 22 }  // 모든 식당 불러오기
+        });
 
         console.log("식당 목록 API 응답:", data);
 
