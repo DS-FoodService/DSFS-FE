@@ -75,11 +75,15 @@ const RestaurantCard = ({ restaurant }) => {
             {restaurant.name}
           </h3>
 
-          {/* 평점 + 리뷰 개수 */}
-          <div className="flex items-center gap-1">
-            <span style={{ color: '#C9D267' }}>★★★★★</span>
-            <span className="text-gray-600 text-sm">({restaurant.reviewCount ?? 0})</span>
-          </div>
+          {/* 평점 + 리뷰 개수 (실제 데이터가 있을 때만 표시) */}
+          {restaurant.score !== null && restaurant.reviewCount > 0 ? (
+            <div className="flex items-center gap-1">
+              <span style={{ color: '#C9D267' }}>★★★★★</span>
+              <span className="text-gray-600 text-sm">({restaurant.reviewCount})</span>
+            </div>
+          ) : (
+            <div className="text-gray-400 text-sm">아직 리뷰가 없습니다</div>
+          )}
 
           {/* 아이콘 영역 + 자세히 버튼 */}
           <div className="flex justify-between items-center mt-3">

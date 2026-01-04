@@ -16,6 +16,52 @@ const DIETARY_ICONS = [
   { id: "local", name: "Local", icon: "/assets/restaurants/local.png" },
 ];
 
+// 학식당 데이터 (하드코딩)
+const ON_CAMPUS_RESTAURANTS = {
+  'campus_1': {
+    name: '오늘의 메뉴',
+    address: '덕성여자대학교 학생회관 1층',
+    lat: 37.6514,
+    lng: 127.016,
+    score: null,  // 실제 리뷰 없으므로 표시 안함
+    reviewCount: 0,
+    tags: ['local', 'vegan'],
+    menus: [
+      { name: '비빔밥', price: 4500 },
+      { name: '제육덮밥', price: 5000 },
+      { name: '김치찌개', price: 4500 },
+    ],
+  },
+  'campus_2': {
+    name: '비바쿡',
+    address: '덕성여자대학교 학생회관 2층',
+    lat: 37.6514,
+    lng: 127.016,
+    score: null,
+    reviewCount: 0,
+    tags: ['gluten_free'],
+    menus: [
+      { name: '알리오 올리오', price: 5500 },
+      { name: '까르보나라', price: 6000 },
+      { name: '토마토 파스타', price: 5500 },
+    ],
+  },
+  'campus_3': {
+    name: '포한끼',
+    address: '덕성여자대학교 학생회관 지하 1층',
+    lat: 37.6514,
+    lng: 127.016,
+    score: null,
+    reviewCount: 0,
+    tags: ['local'],
+    menus: [
+      { name: '소고기 쌀국수', price: 7000 },
+      { name: '분짜', price: 7500 },
+      { name: '반미 샌드위치', price: 5000 },
+    ],
+  },
+};
+
 // 카카오 지도 컴포넌트
 const RestaurantMap = ({ lat, lng, name }) => {
   const mapRef = useRef(null);
@@ -101,19 +147,31 @@ export default function DetailPage() {
   // 식당 상세 정보 불러오기
   useEffect(() => {
     const fetchRestaurantDetail = async () => {
+      // 학식당인 경우 하드코딩 데이터 사용
+      if (restaurantId.startsWith('campus_')) {
+        const campusData = ON_CAMPUS_RESTAURANTS[restaurantId];
+        if (campusData) {
+          setRestaurant(campusData);
+          setLoading(false);
+          return;
+        }
+      }
+
       try {
         // 먼저 상세 API 시도
         const { data } = await api.get(`/restaurants/${restaurantId}`);
         console.log("식당 상세 정보:", data);
         const r = data.result?.restaurant || data.result;
         const menus = data.result?.menus || r?.menus || [];
-        console.log("🏷️ 아이콘 필드:", { tags: r?.tags, icons: r?.icons });
+        // 메뉴들에서 icons 수집 (중복 제거)
+        const menuIcons = [...new Set(menus.flatMap(m => m.icons || []))];
+        console.log("🏷️ 아이콘 필드:", { tags: r?.tags, icons: r?.icons, menuIcons });
         if (r) {
           setRestaurant({
             ...r,
             lat: r.latitude || r.lat,
             lng: r.longitude || r.lng,
-            tags: r.icons || r.tags || [],  // icons 먼저 체크
+            tags: r.icons || r.tags || menuIcons,  // restaurant icons -> tags -> menu icons 순으로 체크
             menus: menus,
           });
         } else {
@@ -235,13 +293,10 @@ export default function DetailPage() {
           <h2 className="text-xl font-bold text-gray-800 mb-4">식당 특징</h2>
           <div className="flex flex-wrap gap-4">
             {restaurant.tags.map((tagId) => {
-              const icon = DIETARY_ICONS.find(i => i.id === tagId);
+              const icon = DIETARY_ICONS.find(i => i.id === tagId.toLowerCase());
               if (!icon) return null;
               return (
-                <div key={tagId} className="flex flex-col items-center gap-2 p-3 bg-lime-50 rounded-lg">
-                  <img src={icon.icon} alt={icon.name} className="w-12 h-12 object-contain" />
-                  <span className="text-sm font-medium text-gray-700">{icon.name}</span>
-                </div>
+                <img key={tagId} src={icon.icon} alt={icon.name} className="w-20 h-20 object-contain" />
               );
             })}
           </div>
@@ -252,25 +307,37 @@ export default function DetailPage() {
       <section className="mb-8">
         <h2 className="text-xl font-bold text-gray-800 mb-4">메뉴</h2>
         {restaurant?.menus && restaurant.menus.length > 0 ? (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-lime-100">
-                <tr>
-                  <th className="text-left px-6 py-3 text-gray-700 font-semibold">메뉴명</th>
-                  <th className="text-right px-6 py-3 text-gray-700 font-semibold">가격</th>
-                </tr>
-              </thead>
-              <tbody>
-                {restaurant.menus.map((menu, idx) => (
-                  <tr key={idx} className="border-t border-gray-100 hover:bg-gray-50">
-                    <td className="px-6 py-4 text-gray-800">{menu.name}</td>
-                    <td className="px-6 py-4 text-gray-600 text-right">
-                      {menu.price ? `${menu.price.toLocaleString()}원` : "-"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {restaurant.menus.map((menu, idx) => (
+              <div key={idx} className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+                {/* 메뉴 이미지 */}
+                {menu.imgUrl && (
+                  <img
+                    src={menu.imgUrl}
+                    alt={menu.name}
+                    className="w-full h-40 object-cover"
+                  />
+                )}
+                {/* 메뉴 정보 */}
+                <div className="p-4">
+                  <h3 className="font-semibold text-gray-800 text-lg">{menu.name}</h3>
+                  <p className="text-lime-600 font-bold mt-1">
+                    {menu.price ? `${menu.price.toLocaleString()}원` : "-"}
+                  </p>
+                  {/* 메뉴별 아이콘 */}
+                  {menu.icons && menu.icons.length > 0 && (
+                    <div className="flex gap-2 mt-2">
+                      {menu.icons.map((iconId, i) => {
+                        const icon = DIETARY_ICONS.find(d => d.id === iconId.toLowerCase());
+                        return icon ? (
+                          <img key={i} src={icon.icon} alt={icon.name} className="w-6 h-6 object-contain" />
+                        ) : null;
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="bg-gray-100 rounded-lg p-6 text-center text-gray-500">
